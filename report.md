@@ -23,7 +23,7 @@ Finally evaluate combinations and the different methods, using an evaluation or 
 - RQ3: What are the limitations of current LLM safeguards?  
 
 # Decisions:
-
+- Who does what? What does each person take responsability for? 
 - What model? 
 - What model size? 
 - What problem?
