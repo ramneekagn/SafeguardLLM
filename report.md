@@ -30,10 +30,12 @@ RQ3: What are the limitations of current LLM safeguards?
 
 # Milesstones
 
-- Create a pipeline around the llm that you can use to flexibly bootstrap input, internals at a  certain layer and output
+- Create a pipeline around the llm that you can use to flexibly bootstrap input, internals at a certain layer and output
+- Finalise model, and datasets
 - Build a reliable safety classifier for the input
 - Build a reliable safety classifier for the output
-- Find an complementary inner safety mechanism 
+- Find an complementary inner safety mechanism
+- polish the pipeline and the 
 
 # Project Timeline
 
