@@ -1,6 +1,6 @@
 # Safety Classifiers: 
 
-[AntrophicConstitutional Classifiers 2025](https://www.anthropic.com/research/constitutional-classifiers)
+[Anthrophic Constitutional Classifiers 2025](https://www.anthropic.com/research/constitutional-classifiers)
 
 [Anthrophic Constitutional Classifers 2026](https://www.anthropic.com/research/next-generation-constitutional-classifiers)
 
