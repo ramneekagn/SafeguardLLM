@@ -1,8 +1,8 @@
 # Safety Classifiers: 
 
-[Constitutional Classifiers](https://www.anthropic.com/research/constitutional-classifiers)
+[AntrophicConstitutional Classifiers 2025](https://www.anthropic.com/research/constitutional-classifiers)
 
-[Antrophic Constitutional Classifers](https://www.anthropic.com/research/next-generation-constitutional-classifiers)
+[Anthrophic Constitutional Classifers 2026](https://www.anthropic.com/research/next-generation-constitutional-classifiers)
 
 [Pretrained Safety Classifier](https://huggingface.co/llm-semantic-router/mlcommons-safety-classifier-level2-hazard)
 
