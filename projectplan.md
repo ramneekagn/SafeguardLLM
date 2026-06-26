@@ -22,9 +22,18 @@ Output: Safety Classifiers
 
 # Research Questions	
 
+RQ1: How robust are safety classifiers for LLMs? 
 
+RQ2: Can we successfully implement internal methods during runtime without inhibiting the models capabilities? 
+
+RQ3: What are the limitations of current LLM safeguards?  
 
 # Milesstones
+
+- Create a pipeline around the llm that you can use to flexibly bootstrap input, internals at a  certain layer and output
+- Build a reliable safety classifier for the input
+- Build a reliable safety classifier for the output
+- Find an complementary inner safety mechanism 
 
 # Project Timeline
 
