@@ -58,7 +58,7 @@ Finally evaluate combinations and the different methods, using an evaluation or 
 
 3. Week:
 - Implement inner method #2 and evaluate
-- Evaluate in combination
+- Evaluate in combination find the best combination
 - Refine code base
 - Finalize Results
 - First draft report and presentation 
