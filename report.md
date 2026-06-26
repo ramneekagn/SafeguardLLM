@@ -21,6 +21,7 @@ Potential solutions include:
 - RQ3: What are the limitations of current LLM safeguards?  
 
 # Decisions:
+- Clarify the degree of AI usage!
 - Who does what? What does each person take responsability for? 
 - What model? 
 - What model size? 
