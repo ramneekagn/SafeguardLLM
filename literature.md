@@ -26,3 +26,5 @@ What Features in Prompts Jailbreak LLMs? Investigating the Mechanisms Behind Att
 Detecting strategic deception with linear probes: https://openreview.net/pdf?id=C5Jj3QKQav
 
 Sparse Autoencoders are Capable LLM Jailbreak Mitigators: https://arxiv.org/pdf/2602.12418
+
+Circuit Discovery Helps To Detect LLM Jailbreaking https://arxiv.org/html/2411.11114v1
