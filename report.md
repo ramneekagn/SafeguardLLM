@@ -44,9 +44,9 @@ RQ3: What are the limitations of current LLM safeguards?
 # Project Timeline
 
 1. Week: 
-- Specify research questions and scope 
-- Setup eval pipeline and test
+- Specify research questions and scope
 - Literature Search about tools
+- Setup eval pipeline and test
 - Implement input classifier (pretrained or finetune) 
 - Evaluate Classifier
   
