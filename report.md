@@ -5,16 +5,14 @@
 - Attacks and vulnerabilities persist even in current SOTA systems 
 
 # Methodology
-
-See the LLM as a safety critical system, audit the input, internals and output in real time.
-
+- See the LLM as a safety critical system, audit the input, internals and output in real time.
 Potential solutions include:
 
-Input: Safety Classifier to detect malicious prompts, or jailbreaking attempts, Prompt rewriting
-Internals: Sparse Autoencoders, Linear Probes, Steering Vectors 
-Output: Safety Classifiers 
+- Input: Safety Classifier to detect malicious prompts, or jailbreaking attempts, Prompt rewriting
+- Internals: Sparse Autoencoders, Linear Probes, Steering Vectors 
+- Output: Safety Classifiers 
 
-Finally evaluate combinations and the different methods, using an evaluation or red teaming method. 
+- Finally evaluate combinations and the different methods, using an evaluation or red teaming method. 
 
 # Research Questions	
 
