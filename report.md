@@ -47,7 +47,7 @@ Finally evaluate combinations and the different methods, using an evaluation or 
 1. Week: 
 - Specify research questions and scope
 - Literature Search about tools
-- Setup eval pipeline and test
+- Setup the full pipeline including evaluations, the flexible architecture and a pipelining system
 - Implement input classifier (pretrained or finetune) 
 - Evaluate Classifier
   
