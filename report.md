@@ -1,9 +1,7 @@
 # The problem	
 
 - LLMs are complex black box systems, that are hard to control
-
 - Reinforcement Learning with Human Feedback and Supervised Finetuning is limited in terms of control
-
 - Attacks and vulnerabilities persist even in current SOTA systems 
 
 # Methodology
@@ -13,9 +11,7 @@ See the LLM as a safety critical system, audit the input, internals and output i
 Potential solutions include:
 
 Input: Safety Classifier to detect malicious prompts, or jailbreaking attempts, Prompt rewriting
-
 Internals: Sparse Autoencoders, Linear Probes, Steering Vectors 
-
 Output: Safety Classifiers 
 
  Goal: Mitigate safety risks of LLMs with different tools
@@ -23,9 +19,7 @@ Output: Safety Classifiers
 # Research Questions	
 
 RQ1: How robust are safety classifiers for LLMs? 
-
 RQ2: Can we successfully implement internal methods during runtime without inhibiting the models capabilities? 
-
 RQ3: What are the limitations of current LLM safeguards?  
 
 # Decisions:
@@ -53,18 +47,21 @@ RQ3: What are the limitations of current LLM safeguards?
 - Specify research questions and scope 
 - Setup eval pipeline and test
 - Literature Search about tools
-- Implement classifier (pretrained or finetune) 
+- Implement input classifier (pretrained or finetune) 
 - Evaluate Classifier
+  
 2. Week:
-- First shot with other methods
-- Compare other methods with safety classifier
+- Implement output classifier and evaluate 
+- Implement inner method 
+- Compare other methods with safety classifier in isolation
 - Test in combination
 - Analysis of results 
+
 3. Week: 
 - Refine code base 
 - Finalize Results
-- Start report and presentation 
+- First draft report and presentation 
+
 4. Week:
-- Write up the report 
-- Finish presentation
+- Finish presentation and report 
 
