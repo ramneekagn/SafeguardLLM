@@ -1,7 +1,3 @@
-Literature Search 
-
-Anthropic
-
 # Safety Classifiers: 
 
 Constitutional Classifiers https://www.anthropic.com/research/constitutional-classifiers
