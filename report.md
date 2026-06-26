@@ -52,13 +52,13 @@ RQ3: What are the limitations of current LLM safeguards?
   
 2. Week:
 - Implement output classifier and evaluate 
-- Implement inner method and evaluate 
-- Compare other methods with safety classifier in isolation
-- Evaluate in combination
+- Implement inner method #1 and evaluate 
+- Compare inner method with safety classifier in isolation
 
 3. Week:
-- Implement second inner method
-- Refine code base 
+- Implement inner method #2 and evaluate
+- Evaluate in combination
+- Refine code base
 - Finalize Results
 - First draft report and presentation 
 
