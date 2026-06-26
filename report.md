@@ -28,6 +28,15 @@ RQ2: Can we successfully implement internal methods during runtime without inhib
 
 RQ3: What are the limitations of current LLM safeguards?  
 
+# Decisions:
+
+- What model? 
+- What model size? 
+- What problem? 
+- What dataset? 
+- How does the red teaming approach look like? 
+- What methods? 
+
 # Milesstones
 
 - Create a pipeline around the llm that you can use to flexibly bootstrap input, internals at a certain layer and output
@@ -41,21 +50,21 @@ RQ3: What are the limitations of current LLM safeguards?
 # Project Timeline
 
 1. Week: 
-Specify research questions and scope 
-Setup eval pipeline and test
-Literature Search about tools
-Start training classifier 
+- Specify research questions and scope 
+- Setup eval pipeline and test
+- Literature Search about tools
+- Implement classifier (pretrained or finetune) 
+- Evaluate Classifier
 2. Week:
-Safety Classifier testing and improvement 
-Test LLM system with classifier 
-Analysis of results 
-First shot with other methods
+- First shot with other methods
+- Compare other methods with safety classifier
+- Test in combination
+- Analysis of results 
 3. Week: 
-Compare other methods with safety classifier
-Refine code base 
-Finalize Results
-Start report and presentation 
+- Refine code base 
+- Finalize Results
+- Start report and presentation 
 4. Week:
-Write up the report 
-Finish presentation
+- Write up the report 
+- Finish presentation
 
