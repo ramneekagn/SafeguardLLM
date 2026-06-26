@@ -14,22 +14,23 @@ Input: Safety Classifier to detect malicious prompts, or jailbreaking attempts, 
 Internals: Sparse Autoencoders, Linear Probes, Steering Vectors 
 Output: Safety Classifiers 
 
- Goal: Mitigate safety risks of LLMs with different tools
+Finally evaluate combinations and the different methods, using an evaluation or red teaming method. 
 
 # Research Questions	
 
-RQ1: How robust are safety classifiers for LLMs? 
-RQ2: Can we successfully implement internal methods during runtime without inhibiting the models capabilities? 
-RQ3: What are the limitations of current LLM safeguards?  
+- RQ1: How robust are safety classifiers for LLMs? 
+- RQ2: Can we successfully implement internal methods during runtime without inhibiting the models capabilities? 
+- RQ3: What are the limitations of current LLM safeguards?  
 
 # Decisions:
 
 - What model? 
 - What model size? 
-- What problem? 
+- What problem?
+- What methods for auditing the model?
+- How many methods for auditing for each layer?
 - What dataset/benchmark? 
 - How does the red teaming approach look like? 
-- What methods? 
 
 # Milesstones
 
