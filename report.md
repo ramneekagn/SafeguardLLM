@@ -27,7 +27,7 @@ RQ3: What are the limitations of current LLM safeguards?
 - What model? 
 - What model size? 
 - What problem? 
-- What dataset? 
+- What dataset/benchmark? 
 - How does the red teaming approach look like? 
 - What methods? 
 
@@ -57,11 +57,10 @@ RQ3: What are the limitations of current LLM safeguards?
 - Test in combination
 - Analysis of results 
 
-3. Week: 
+3. Week:
 - Refine code base 
 - Finalize Results
 - First draft report and presentation 
 
 4. Week:
 - Finish presentation and report 
-
