@@ -38,3 +38,12 @@ Safety Classifier testing and improvement
 Test LLM system with classifier 
 Analysis of results 
 First shot with other methods
+3. Week: 
+Compare other methods with safety classifier
+Refine code base 
+Finalize Results
+Start report and presentation 
+4. Week:
+Write up the report 
+Finish presentation
+
