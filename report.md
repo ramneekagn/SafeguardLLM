@@ -29,7 +29,8 @@ Potential solutions include:
 - What methods for auditing the model?
 - How many methods for auditing for each layer?
 - What dataset/benchmark? 
-- How does the red teaming approach look like? 
+- How does the red teaming approach look like?
+- Do we agree on the timeline?  
 
 # Milesstones
 
