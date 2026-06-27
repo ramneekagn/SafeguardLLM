@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 
-class IOFilter(ABC): 
+class Filter(ABC): 
     def __init__(self):
         pass
 
     #analyse and approve the input string 
     @abstractmethod
-    def approve(input: str) -> bool: 
+    def validate(self,input: list[str]): 
         pass
 
     
