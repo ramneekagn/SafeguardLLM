@@ -1,0 +1,1 @@
+# class that is able to interpret and analyse the results from the SafeLLM
