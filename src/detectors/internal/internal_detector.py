@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from torch import Tensor
-class InternalFilter(ABC): 
+class InternalDetector(ABC): 
     def __init__(self, target_layer: str):
         self.target_layer = target_layer
 

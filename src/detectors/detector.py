@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-class Filter(ABC): 
+class Detector(ABC): 
     def __init__(self):
         pass
 

@@ -6,7 +6,7 @@ from typing import Any
 #This function was ai generated per description
 def instantiate_component(config_dict: dict[str, Any]) -> Any:
     if "name" not in config_dict:
-        raise ValueError("Configuration dictionary must contain 'name' for filters")
+        raise ValueError("Configuration dictionary must contain 'name' for detectors")
 
     class_path = config_dict.get("class_path")
     args = config_dict.get("args", {}) or {}
@@ -25,13 +25,13 @@ def load_safety_config(config_path: Path) -> dict[str, Any]:
     with open(config_path, "r") as file:
         raw_config = yaml.safe_load(file)
     
-    raw_input_filters = raw_config.get("input_filters") or []
-    raw_internal_filters = raw_config.get("internal_filters") or []
-    raw_output_filters = raw_config.get("output_filters") or []
+    raw_input_detectors = raw_config.get("input_detectors") or []
+    raw_internal_detectors = raw_config.get("internal_detectors") or []
+    raw_output_detectors = raw_config.get("output_detectors") or []
     
     return {
-        "input_filters": [(instantiate_component(f), f["name"]) for f in raw_input_filters],
-        "internal_filters": [(instantiate_component(f), f["name"]) for f in raw_internal_filters],
-        "output_filters": [(instantiate_component(f), f["name"]) for f in raw_output_filters],
+        "input_detectors": [(instantiate_component(f), f["name"]) for f in raw_input_detectors],
+        "internal_detectors": [(instantiate_component(f), f["name"]) for f in raw_internal_detectors],
+        "output_detectors": [(instantiate_component(f), f["name"]) for f in raw_output_detectors],
         "safety_config": raw_config.get("safety_config", {})
     }

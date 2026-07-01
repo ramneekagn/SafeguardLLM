@@ -1,6 +1,6 @@
-from src.filters.filter import Filter  
+from src.detectors.detector import Detector  
 
-class SimpleFilter(Filter): 
+class SimpleDetector(Detector): 
     def __init__(self):
         super().__init__()
 
