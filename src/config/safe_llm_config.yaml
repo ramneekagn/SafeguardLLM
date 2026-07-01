@@ -8,23 +8,29 @@ input_filters:
     name: "SimpleFilter1_input"
     args: null
     
-  - class_path: "src.filters.simple_filter.SimpleFilter2"
+  - class_path: "src.filters.simple_filter.SimpleFilter"
     name: "SimpleFilter2_input"
     args: null
 
-  - class_path: "src.filters.simple_filter.SimpleFilter3"
+  - class_path: "src.filters.simple_filter.SimpleFilter"
     name: "SimpleFilter3_input"
     args: null
+
+internal_filters: 
+  - class_path: "src.filters.internal.simple_internal_filter.SimpleInternalFilter"
+    name: "SimpleInternalFilter1"
+    args: 
+      target_layer: model.layers.27.mlp.act_fn
 
 output_filters:
   - class_path: "src.filters.simple_filter.SimpleFilter"
     name: "SimpleFilter1_input"
     args: null
     
-  - class_path: "src.filters.simple_filter.SimpleFilter2"
+  - class_path: "src.filters.simple_filter.SimpleFilter"
     name: "SimpleFilter2_input"
     args: null
 
-  - class_path: "src.filters.simple_filter.SimpleFilter3"
+  - class_path: "src.filters.simple_filter.SimpleFilter"
     name: "SimpleFilter3_input"
     args: null

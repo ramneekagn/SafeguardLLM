@@ -13,7 +13,6 @@ class InternalFilter(ABC):
     def validate(self) -> list[bool]: 
         pass
 
-    #analyse and approve the input string 
     @abstractmethod
     def reset(self) -> None: 
         pass

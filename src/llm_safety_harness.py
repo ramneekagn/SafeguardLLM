@@ -55,7 +55,10 @@ class SafeLLM():
         for internal_filter, _ in self.internal_filters:
             internal_filter.approvals = []
         tokenized = self.tokenizer(inputs, return_tensors ="pt", padding=True, truncation=True).to(self.model.device)
+        input_len = tokenized["input_ids"].shape[1]
+
         outputs = self.model.generate(**tokenized)
+        outputs = outputs[:,input_len:]
         #read from hooks 
         for internal_filter, filter_name in self.internal_filters:
             internal_approval_per_batch = internal_filter.validate() 
