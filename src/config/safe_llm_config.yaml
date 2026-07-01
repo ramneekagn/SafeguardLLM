@@ -21,7 +21,16 @@ internal_filters:
     name: "SimpleInternalFilter1"
     args: 
       target_layer: model.layers.27.mlp.act_fn
-
+    name: "SimpleInternalFilter2"
+    args: 
+      target_layer: model.layers.26.mlp.act_fn
+    name: "SimpleInternalFilter2"
+    args: 
+      target_layer: model.layers.25.mlp.act_fn
+    name: "SimpleInternalFilter3"
+    args: 
+      target_layer: model.layers.24.mlp.act_fn
+      
 output_filters:
   - class_path: "src.filters.simple_filter.SimpleFilter"
     name: "SimpleFilter1_input"
