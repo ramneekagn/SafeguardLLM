@@ -21,15 +21,19 @@ internal_detectors:
     name: "SimpleInternalDetector1"
     args: 
       target_layer: model.layers.27.mlp.act_fn
+  - class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
     name: "SimpleInternalDetector2"
     args: 
       target_layer: model.layers.26.mlp.act_fn
-    name: "SimpleInternalDetector2"
-    args: 
-      target_layer: model.layers.25.mlp.act_fn
+  - class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
     name: "SimpleInternalDetector3"
     args: 
+      target_layer: model.layers.25.mlp.act_fn
+  - class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
+    name: "SimpleInternalDetector4"
+    args: 
       target_layer: model.layers.24.mlp.act_fn
+      
 output_detectors:
   - class_path: "src.detectors.simple_detector.SimpleDetector"
     name: "SimpleDetector1_input"

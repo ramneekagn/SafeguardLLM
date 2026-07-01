@@ -15,7 +15,6 @@ class SimpleInternalDetector(InternalDetector):
     def hook(self, module, input: Tensor, output:Tensor) -> None: 
         self.activation_cache.append(output[:,-1,:].detach().clone()) 
         self.pos += 1
-        print(output.shape)
 
     #once the output is finished we validate if any are above threshold
     def validate(self) -> list[bool]: 
