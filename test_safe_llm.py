@@ -3,7 +3,6 @@ from src.detectors.simple_detector import SimpleDetector
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 #AI Generated
-
 def print_safety_result(res) -> None:
     """Prints a detailed, formatted summary of a single GenerationSafetyResult."""
     status_str = "PASSED" if res.overall_approval else "BLOCKED"

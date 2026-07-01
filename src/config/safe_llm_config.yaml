@@ -1,48 +1,46 @@
-
-
 safety_config:
   early_stopping: true
 
 input_detectors:
-  - class_path: "src.detectors.simple_detector.SimpleDetector"
-    name: "SimpleDetector1_input"
+  - name: "SimpleDetector1_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
     
-  - class_path: "src.detectors.simple_detector.SimpleDetector"
-    name: "SimpleDetector2_input"
+  - name: "SimpleDetector43_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
 
-  - class_path: "src.detectors.simple_detector.SimpleDetector"
-    name: "SimpleDetector3_input"
+  - name: "SimpleDetector3_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
 
 internal_detectors: 
-  - class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
-    name: "SimpleInternalDetector1"
+  - name: "SimpleInternalDetector1"
+    class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
     args: 
       target_layer: model.layers.27.mlp.act_fn
-  - class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
-    name: "SimpleInternalDetector2"
+  - name: "SimpleInternalDetector2"
+    class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
     args: 
       target_layer: model.layers.26.mlp.act_fn
-  - class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
-    name: "SimpleInternalDetector3"
+  - name: "SimpleInternalDetector3"
+    class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
     args: 
       target_layer: model.layers.25.mlp.act_fn
-  - class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
-    name: "SimpleInternalDetector4"
+  - name: "SimpleInternalDetector4"
+    class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
     args: 
       target_layer: model.layers.24.mlp.act_fn
-      
+
 output_detectors:
-  - class_path: "src.detectors.simple_detector.SimpleDetector"
-    name: "SimpleDetector1_input"
+  - name: "SimpleDetector1_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
     
-  - class_path: "src.detectors.simple_detector.SimpleDetector"
-    name: "SimpleDetector2_input"
+  - name: "SimpleDetector2_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
 
-  - class_path: "src.detectors.simple_detector.SimpleDetector"
-    name: "SimpleDetector3_input"
+  - name: "SimpleDetector3_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
