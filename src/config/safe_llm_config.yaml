@@ -1,0 +1,30 @@
+
+
+safety_config:
+  early_stopping: true
+
+input_filters:
+  - class_path: "src.filters.simple_filter.SimpleFilter"
+    name: "SimpleFilter1_input"
+    args: null
+    
+  - class_path: "src.filters.simple_filter.SimpleFilter2"
+    name: "SimpleFilter2_input"
+    args: null
+
+  - class_path: "src.filters.simple_filter.SimpleFilter3"
+    name: "SimpleFilter3_input"
+    args: null
+
+output_filters:
+  - class_path: "src.filters.simple_filter.SimpleFilter"
+    name: "SimpleFilter1_input"
+    args: null
+    
+  - class_path: "src.filters.simple_filter.SimpleFilter2"
+    name: "SimpleFilter2_input"
+    args: null
+
+  - class_path: "src.filters.simple_filter.SimpleFilter3"
+    name: "SimpleFilter3_input"
+    args: null
