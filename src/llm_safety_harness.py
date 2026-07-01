@@ -8,12 +8,11 @@ from src.utils.load_config import load_safety_config
 class GenerationSafetyResult:
     prompt: str 
     output: str 
-    #For each prompt every detector is tracked by detectortype name and if approved
-    input_approvals: dict[str,bool] 
-    internal_approvals: dict[str,bool]  
-    output_approvals: dict[str,bool]   
-    # when all detectors approve
-    overall_approval: bool 
+    # map detector_name -> {"class_name": str, "approved": bool}
+    input_approvals: dict[str, dict[str, any]] 
+    internal_approvals: dict[str, dict[str, any]]  
+    output_approvals: dict[str, dict[str, any]]       
+    overall_approval: bool = True
     
 
 class SafeLLM(): 
@@ -29,14 +28,17 @@ class SafeLLM():
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
-
+        self.tokenizer.padding_side = "left"
+        
     def apply_io_detectors(self, elements: list[str], detectors: list[tuple[Detector, str]]) -> list[dict[str, bool]]:
         input_approvals = [{} for _ in elements]
         for detector_instance, detector_name in detectors: 
             input_approval_per_batch: list[bool] = detector_instance.validate(elements)
             for i, approval in enumerate(input_approval_per_batch): 
-                input_approvals[i][detector_name] = approval
-                
+                input_approvals[i][detector_name] = {
+                    "class_name": detector_instance.__class__.__name__,
+                    "approved": approval
+                }
         return input_approvals 
 
     #register hooks for the model
@@ -61,9 +63,12 @@ class SafeLLM():
         outputs = outputs[:,input_len:]
         #read from hooks 
         for internal_detector, detector_name in self.internal_detectors:
-            internal_approval_per_batch = internal_detector.validate() 
-            for i, approval in enumerate(internal_approval_per_batch): 
-                internal_approvals[i][detector_name] = approval
+                    internal_approval_per_batch = internal_detector.validate() 
+                    for i, approval in enumerate(internal_approval_per_batch): 
+                        internal_approvals[i][detector_name] = {
+                            "class_name": internal_detector.__class__.__name__,
+                            "approved": approval
+                        }
         return self.tokenizer.batch_decode(outputs, skip_special_tokens=True), internal_approvals
 
     #allow for batched input
@@ -84,9 +89,9 @@ class SafeLLM():
             output_approvals = self.apply_io_detectors(outputs,detectors = self.output_detectors) 
         for i, input in enumerate(inputs): 
             overall_approval = (
-                all(input_approvals[i].values()) and 
-                all(internal_approvals[i].values()) and 
-                all(output_approvals[i].values())
+                all(v["approved"] for v in input_approvals[i].values()) and 
+                all(v["approved"] for v in internal_approvals[i].values()) and 
+                all(v["approved"] for v in output_approvals[i].values())
             )
             safety_result_list.append(GenerationSafetyResult(input, outputs[i], input_approvals[i], internal_approvals[i], output_approvals[i], overall_approval)) 
         return safety_result_list
