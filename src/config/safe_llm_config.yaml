@@ -1,0 +1,46 @@
+safety_config:
+  early_stopping: true
+
+input_detectors:
+  - name: "SimpleDetector1_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
+    args: null
+    
+  - name: "SimpleDetector43_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
+    args: null
+
+  - name: "SimpleDetector3_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
+    args: null
+
+internal_detectors: 
+  - name: "SimpleInternalDetector1"
+    class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
+    args: 
+      target_layer: model.layers.27.mlp.act_fn
+  - name: "SimpleInternalDetector2"
+    class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
+    args: 
+      target_layer: model.layers.26.mlp.act_fn
+  - name: "SimpleInternalDetector3"
+    class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
+    args: 
+      target_layer: model.layers.25.mlp.act_fn
+  - name: "SimpleInternalDetector4"
+    class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
+    args: 
+      target_layer: model.layers.24.mlp.act_fn
+
+output_detectors:
+  - name: "SimpleDetector1_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
+    args: null
+    
+  - name: "SimpleDetector2_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
+    args: null
+
+  - name: "SimpleDetector3_input"
+    class_path: "src.detectors.simple_detector.SimpleDetector"
+    args: null

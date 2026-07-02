@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from torch import Tensor
-class InternalFilter(ABC): 
+
+class Detector(ABC): 
     def __init__(self):
         pass
 
     #analyse and approve the input string 
     @abstractmethod
-    def approve(self, activation: Tensor) -> bool: 
+    def validate(self,input: list[str]): 
         pass
 
     
