@@ -1,24 +1,41 @@
 from pathlib import Path
 
 import torch
-from transformers import AutoTokenizer, BertForSequenceClassification
+from transformers import (
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
+)
 
 from src.filters.filter import Filter
 
 class BertFilter(Filter):
-    def __init__(self, model_path: Path, threshold: float = 0.5):
+    """
+    A simple Filter class to validate inputs/outputs with a Bert model.
+
+    Attributes:
+        model_path (Path): The file path to the BERT model.
+        threshold (float): The minimum confidence score for the label to evaluate to true. Defaults to 0.5.
+        label_pos (int): The index position of the target label. Defaults to 0.
+    """
+    def __init__(self, model_path: Path, threshold: float = 0.5, label_pos: int = 0):
         super().__init__()
         self.threshold = threshold
+        self.label_pos = label_pos
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = BertForSequenceClassification.from_pretrained(model_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
         self.model.eval()
 
-        # TODO: Add device e.g. mps, cuda, cpu?
 
+    def validate(self, inputs: list[str]) -> list[bool]:
+        """
+        Validates a text batch against the threshold of the BERT model.
 
-    def validate(self, inputs: list[str]) -> list[dict[str, bool]]:
+        Args:
+            inputs (list[str]): A batch of strings to be labeled.
 
-        # TODO: Batch inputs to protect OoM
+        Returns:
+            list[bool]: A list of booleans for each input regarding if the target label exceed the set threshold.
+        """
         input = self.tokenizer(
             inputs,
             truncation=True,
@@ -29,20 +46,11 @@ class BertFilter(Filter):
         with torch.no_grad():
             outputs = self.model(**input)
 
-        # TODO: Check loss of trainer
+        # we assume here a multilabel model and only check for the first label of the model
         probs = torch.sigmoid(outputs.logits)
-        # TODO: Better way than generic labels ?
-        id2label = self.model.config.id2label
-        results = []
+        first_label_probs = probs[:, self.label_pos]
 
-        for prob in probs:
-            prob_dict = {}
-            for label_id, label_name in id2label.items():
-                score = prob[label_id].item()
-                prob_dict[label_name] = (score > self.threshold)
-            results.append(prob_dict)
-
-        return results
+        return (first_label_probs > self.threshold).tolist()
 
 if __name__ == "__main__":
     shitty_testing_path = Path(__file__).resolve().parents[2] / "scripts" / "bert-512"
