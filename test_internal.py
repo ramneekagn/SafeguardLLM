@@ -1,4 +1,4 @@
-from src.filters.internal.simple_internal_filter import SimpleInternalFilter
+from filters.internal.simple_internal_detector import SimpleInternalFilter
 import torch
 # --- Test Script --- AI 
 def test_simple_internal_filter():
