@@ -14,6 +14,11 @@ input_detectors:
     class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
 
+  - name: "SimpleBERT1_input"
+    class_path: "src.detectors.bert_detector.BERTdetector"
+    args:
+      model_path: "google-bert/bert-base-uncased"
+
 internal_detectors: 
   - name: "SimpleInternalDetector1"
     class_path: "src.detectors.internal.simple_internal_detector.SimpleInternalDetector"
@@ -44,3 +49,8 @@ output_detectors:
   - name: "SimpleDetector3_input"
     class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
+
+  - name: "SimpleBERT1_output"
+    class_path: "src.detectors.bert_detector.BERTdetector"
+    args:
+      model_path: "google-bert/bert-base-uncased"

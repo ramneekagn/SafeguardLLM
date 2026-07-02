@@ -6,9 +6,9 @@ from transformers import (
     AutoModelForSequenceClassification,
 )
 
-from src.filters.filter import Filter
+from src.detectors.detector import Detector
 
-class BertFilter(Filter):
+class BERTdetector(Detector):
     """
     A simple Filter class to validate inputs/outputs with a Bert model.
 
