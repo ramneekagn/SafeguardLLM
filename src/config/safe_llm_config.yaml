@@ -18,6 +18,7 @@ input_detectors:
     class_path: "src.detectors.bert_detector.BERTdetector"
     args:
       model_path: "google-bert/bert-base-uncased"
+      device: "cuda"
 
 internal_detectors: 
   - name: "SimpleInternalDetector1"
@@ -54,3 +55,4 @@ output_detectors:
     class_path: "src.detectors.bert_detector.BERTdetector"
     args:
       model_path: "google-bert/bert-base-uncased"
+      device: "cuda"

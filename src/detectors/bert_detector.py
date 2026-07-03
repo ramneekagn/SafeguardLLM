@@ -17,12 +17,13 @@ class BERTdetector(Detector):
         threshold (float): The minimum confidence score for the label to evaluate to true. Defaults to 0.5.
         label_pos (int): The index position of the target label. Defaults to 0.
     """
-    def __init__(self, model_path: Path, threshold: float = 0.5, label_pos: int = 0):
+    def __init__(self, model_path: Path, device: str, threshold: float = 0.5, label_pos: int = 0, ):
         super().__init__()
         self.threshold = threshold
         self.label_pos = label_pos
+        self.device = torch.device(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path).to(self.device)
         self.model.eval()
 
 
@@ -41,15 +42,13 @@ class BERTdetector(Detector):
             truncation=True,
             padding=True,
             return_tensors="pt",
-        )
+        ).to(self.device)
 
         with torch.no_grad():
             outputs = self.model(**input)
-
         # we assume here a multilabel model and only check for the first label of the model
         probs = torch.sigmoid(outputs.logits)
         first_label_probs = probs[:, self.label_pos]
-
         return (first_label_probs > self.threshold).tolist()
 
 
