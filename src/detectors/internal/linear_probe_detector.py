@@ -15,6 +15,8 @@ class LinearProbeDetector(InternalDetector):
         self.activation_cache: list[Tensor] = []
         self.pos = 0
         self.threshold = 0
+        self.predictions = []
+        self.probe = None 
 
     # the hook gets the entire batch 
     def hook(self, module, input: Tensor, output:Tensor) -> None: 
@@ -22,16 +24,13 @@ class LinearProbeDetector(InternalDetector):
         if self.probe is None: 
             self.probe = LinearProbe(input_dim).to(self.device)
             self.probe.load_state_dict(self.model_path)
-        self.activation_cache.append(output[:,-1,:].detach().clone().to(self.device)) 
-        self.pos += 1
+        self.activation_cache.append(output[:,-1,:].detach().clone()) 
+        self.predictions.append(self.probe.predict(output[:,-1,:].detach().clone(),threshold=self.threshold))
 
     #once the output is finished we validate if any are above threshold
     def validate(self) -> list[bool]: 
-        stacked = torch.stack(self.activation_cache, dim = 0)
-        mean = torch.mean(stacked, dim=0)
-        comparison_tensor = (mean > self.threshold).any(dim=-1)  
-        return comparison_tensor.tolist()
-        
+        pass
+            
     def reset(self) -> None: 
         self.activation_cache = []  
         self.pos = 0
