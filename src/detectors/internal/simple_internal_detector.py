@@ -9,17 +9,16 @@ class SimpleInternalDetector(InternalDetector):
         self.activation_cache: list[Tensor] = []
         self.pos = 0
         self.threshold = 0
-        if torch.cuda.is_available():
-            torch.set_default_device('cuda:0') 
+    # the hook gets the entire batch 
     # the hook gets the entire batch 
     def hook(self, module, input: Tensor, output:Tensor) -> None: 
-        self.activation_cache.append(output[:,-1,:].detach().clone()) 
+        self.activation_cache.append(output[:,-1,:].detach().clone().to(self.device)) 
         self.pos += 1
 
     #once the output is finished we validate if any are above threshold
     def validate(self) -> list[bool]: 
         stacked = torch.stack(self.activation_cache, dim = 0)
-        mean = torch.mean(stacked, dim=0) 
+        mean = torch.mean(stacked, dim=0)
         comparison_tensor = (mean > self.threshold).any(dim=-1)  
         return comparison_tensor.tolist()
         
