@@ -17,22 +17,23 @@ from src.llm_safety_harness import GenerationSafetyResult
 from sklearn.metrics import confusion_matrix, classification_report
 
 class SafetyEvaluator:
-    def __init__(self, results: list[GenerationSafetyResult], ground_truths: list[bool]):
+    def __init__(self, results: list[GenerationSafetyResult], ground_truths: list[bool], detector_types: tuple[str, ...] = ("input_approvals", "internal_approvals", "output_approvals")):
         """ I am a stub"""
         # TODO: compare ground_truths lengths with each approval lengths ?
 
         self.results = results
         self.ground_truths = ground_truths
+        self.detector_types = detector_types
 
     def _extract_prediction(self, detector_type: str, detector_name: str) -> list[bool]:
         """ Extract the predictions for a specified detector."""
         preds = []
         for res in self.results:
             if not hasattr(res, detector_type):
-                raise ValueError(f"{detector_type} not found.")
+                raise ValueError(f"'{detector_type}' is not a valid Detector Type.\n Valid are: {self.detector_types}")
             approval_dict = getattr(res, detector_type, {})
             if detector_name not in approval_dict:
-                raise ValueError(f"{detector_name} not found in {detector_type}")
+                raise ValueError(f"Detector '{detector_name}' not found in '{detector_type}'.")
             detector_dict = approval_dict.get(detector_name, {})
             approved = detector_dict.get("approved")
 
@@ -45,6 +46,18 @@ class SafetyEvaluator:
         y_pred = self._extract_prediction(detector_type, detector_name)
         return confusion_matrix(y_true, y_pred, labels=[True, False])
 
+    def get_all_confusion_matrices(self) -> dict[tuple[str, str], np.ndarray]:
+        """ Generate all unique confusion matrices in bulk. """
+        conf_matrices = {}
+        for res in self.results: # GenerationSafetyResult
+            for detector_type in self.detector_types: # e.g. input_approvals
+                approval_dict = getattr(res, detector_type) # get input_approvals
+                for detector_name, _ in approval_dict.items():
+                    key = (detector_type, detector_name)
+                    conf_matrices[key] = self.get_confusion_matrix(detector_type, detector_name)
+
+        return conf_matrices
+
 if __name__ == "__main__":
     cur_dir = Path(__file__).resolve().parent
     yaml_path = cur_dir.parent / "results.yaml"
@@ -52,6 +65,8 @@ if __name__ == "__main__":
         # TODO: Add Custom Loader
         results = yaml.load(f, Loader=yaml.UnsafeLoader)
 
-    eval = SafetyEvaluator(results, [True, True])
-    cm = eval.get_confusion_matrix("input_approvals", "SimpleBERT1_input")
-    print(cm)
+    eval = SafetyEvaluator(results, [True, False])
+    #cm = eval.get_confusion_matrix("input_approvals", "SimpleBERT1_input")
+    #print(cm)
+    conf_matrices = eval.get_all_confusion_matrices()
+    print(conf_matrices)
