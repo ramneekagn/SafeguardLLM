@@ -13,6 +13,11 @@ input_detectors:
   - name: "SimpleDetector3_input"
     class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
+  - name: "SimpleBERT1_input"
+    class_path: "src.detectors.bert_detector.BERTdetector"
+    args:
+      model_path: "google-bert/bert-base-uncased"
+      device: "cuda"
 
 internal_detectors: 
   - name: "SimpleInternalDetector1"
@@ -22,6 +27,7 @@ internal_detectors:
       device: "cuda"
       target_layer_name: model.layers.27.mlp.act_fn
       threshold: 0.53
+
 
 output_detectors:
   - name: "SimpleDetector1_input"
@@ -35,5 +41,11 @@ output_detectors:
   - name: "SimpleDetector3_input"
     class_path: "src.detectors.simple_detector.SimpleDetector"
     args: null
+
+  - name: "SimpleBERT1_output"
+    class_path: "src.detectors.bert_detector.BERTdetector"
+    args:
+      model_path: "google-bert/bert-base-uncased"
+      device: "cuda"
 
 

@@ -118,8 +118,8 @@ def safe_LLM_eval(inputs: list[str]):
 
     safety_result = evaluate_safety_results(results)
     print(safety_result)
-
-    if safety_result.get("pass_rate_percent", 0.0) >= 80.0:
+    #hard voting for the ensemble
+    if safety_result.get("pass_rate_percent", 0.0) >= 50.0:
         return results
 
 
