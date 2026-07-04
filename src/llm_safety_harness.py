@@ -1,3 +1,5 @@
+import time
+from typing import Any
 from dataclasses import dataclass
 from src.detectors.detector import Detector
 from src.detectors.internal.internal_detector import InternalDetector
@@ -9,11 +11,11 @@ class GenerationSafetyResult:
     prompt: str 
     output: str 
     # map detector_name -> {"class_name": str, "approved": bool}
-    input_approvals: dict[str, dict[str, any]] 
-    internal_approvals: dict[str, dict[str, any]]  
-    output_approvals: dict[str, dict[str, any]]       
+    input_approvals: dict[str, dict[str, Any]]
+    internal_approvals: dict[str, dict[str, Any]]
+    output_approvals: dict[str, dict[str, Any]]
     overall_approval: bool = True
-    
+
 
 class SafeLLM(): 
     def __init__(self, model, tokenizer, config_path: Path):
@@ -21,7 +23,7 @@ class SafeLLM():
         self.input_detectors: list[tuple[Detector, str]] = config["input_detectors"]  
         self.internal_detectors: list[tuple[InternalDetector, str]] = config["internal_detectors"] 
         self.output_detectors: list[tuple[Detector, str]] = config["output_detectors"] 
-        self.safety_config: dict[str, any] = config["safety_config"]
+        self.safety_config: dict[str, Any] = config["safety_config"]
         self.forward_hooks = []
         self.model = model
         self.tokenizer = tokenizer
@@ -32,12 +34,15 @@ class SafeLLM():
         
     def apply_io_detectors(self, elements: list[str], detectors: list[tuple[Detector, str]]) -> list[dict[str, bool]]:
         input_approvals = [{} for _ in elements]
-        for detector_instance, detector_name in detectors: 
+        for detector_instance, detector_name in detectors:
+            start_time = time.perf_counter()
             input_approval_per_batch: list[bool] = detector_instance.validate(elements)
+            latency = (time.perf_counter() - start_time) * 1000 # convert into ms
             for i, approval in enumerate(input_approval_per_batch): 
                 input_approvals[i][detector_name] = {
                     "class_name": detector_instance.__class__.__name__,
-                    "approved": approval
+                    "approved": approval,
+                    "latency": round(latency, 2)
                 }
         return input_approvals 
 
@@ -63,11 +68,14 @@ class SafeLLM():
         outputs = outputs[:,input_len:]
         #read from hooks 
         for internal_detector, detector_name in self.internal_detectors:
-                    internal_approval_per_batch = internal_detector.validate() 
+                    start_time = time.perf_counter()
+                    internal_approval_per_batch = internal_detector.validate()
+                    latency = (time.perf_counter() - start_time) * 1000 # convert into ms
                     for i, approval in enumerate(internal_approval_per_batch): 
                         internal_approvals[i][detector_name] = {
                             "class_name": internal_detector.__class__.__name__,
-                            "approved": approval
+                            "approved": approval,
+                            "latency": latency
                         }
         return self.tokenizer.batch_decode(outputs, skip_special_tokens=True), internal_approvals
 

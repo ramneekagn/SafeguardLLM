@@ -20,18 +20,17 @@ from src.llm_safety_harness import GenerationSafetyResult
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
 
 class SafetyEvaluator:
-    # TODO: Define allowed detector_types in class ?
     def __init__(self, results: list[GenerationSafetyResult], ground_truths: list[bool], detector_types: tuple[str, ...] = ("input_approvals", "internal_approvals", "output_approvals")):
         """ I am a stub"""
-        # TODO: compare ground_truths lengths with each approval lengths ?
+        # TODO: compare ground_truths lengths with each approval lengths
 
         self.results = results
         self.y_true = ground_truths
         self.detector_types = detector_types
 
-    def _extract_prediction(self, detector_type: str, detector_name: str) -> list[bool]:
+    def _extract_detector_values(self, detector_type: str, detector_name: str, value_key: str, valid_keys: tuple[str, ...] = ("approved", "latency", "class_name")) -> list[bool | float]:
         """ Extract the predictions for a specified detector."""
-        preds = []
+        values = []
         for res in self.results:
             if not hasattr(res, detector_type):
                 raise ValueError(f"'{detector_type}' is not a valid Detector Type.\n Valid are: {self.detector_types}")
@@ -39,12 +38,13 @@ class SafetyEvaluator:
             if detector_name not in approval_dict:
                 raise ValueError(f"Detector '{detector_name}' not found in '{detector_type}'.")
             detector_dict = approval_dict.get(detector_name, {})
-            approved = detector_dict.get("approved")
+            value = detector_dict.get(value_key)
 
-            preds.append(approved)
-        return preds
+            values.append(value)
+        return values
 
     def _get_all_metrics(self, metric_func: Callable[[str, str], dict | np.ndarray]) -> dict[str, dict[str, Any]]:
+        """ Aggregate function to generate all unique values for the given key. """
         metrics = defaultdict(dict)
 
         for res in self.results: # GenerationSafetyResult
@@ -56,21 +56,23 @@ class SafetyEvaluator:
 
     def get_confusion_matrix(self, detector_type: str, detector_name: str) -> np.ndarray:
         """ Generates a single confusion matrix for a specified detector."""
-        y_pred = self._extract_prediction(detector_type, detector_name)
+        y_pred = self._extract_detector_values(detector_type, detector_name, "approved")
         return confusion_matrix(self.y_true, y_pred)
 
     def get_classification_report(self, detector_type: str, detector_name: str) -> dict:
         """ Generates a single classification report for a specified detector."""
-        y_pred = self._extract_prediction(detector_type, detector_name)
+        y_pred = self._extract_detector_values(detector_type, detector_name, "approved")
         return classification_report(self.y_true, y_pred, zero_division=np.nan, output_dict=True)
 
     def display_confusion_matrix(self, detector_type: str, detector_name: str):
+        """ Displays a confusion matrix for the given arguments. """
         cm = self.get_confusion_matrix(detector_type, detector_name)
         cm_display = ConfusionMatrixDisplay(cm)
         cm_display.plot()
         plt.show()
 
     def get_rate_metrics(self, detector_type: str, detector_name: str) -> dict[str, float]:
+        """ Generates the metrics TPR, FNR, FPR, TNR, RefusalRate. """
         rates = {}
 
         cm = self.get_confusion_matrix(detector_type, detector_name)
@@ -91,6 +93,16 @@ class SafetyEvaluator:
 
         return rates
 
+    def get_latency(self, detector_type: str, detector_name: str) -> dict[str, float]:
+        """ Generate a single list of latency metrics for a specified detector. """
+        # TODO: Generate some latency metrics
+        latencies = self._extract_detector_values(detector_type, detector_name, "latency")
+        return latencies
+
+    def get_all_latency_metrics(self):
+        """ Generate all unique latency metrics in bulk. """
+        return self._get_all_metrics(self.get_latency)
+
     def get_all_confusion_matrices(self) -> dict[str, dict[str, np.ndarray]]:
         """ Generate all unique confusion matrices in bulk. """
         return self._get_all_metrics(self.get_confusion_matrix)
@@ -107,16 +119,15 @@ if __name__ == "__main__":
     cur_dir = Path(__file__).resolve().parent
     yaml_path = cur_dir.parent / "results.yaml"
     with open(yaml_path, "r") as f:
-        # TODO: Add Custom Loader insteaf of UnsafeLoader
+        # TODO: Add Custom Loader instead of UnsafeLoader
         results = yaml.load(f, Loader=yaml.UnsafeLoader)
 
-    for res in results:
-        print(res.input_approvals["SimpleBERT1_input"])
-
     eval = SafetyEvaluator(results, [True, False])
+
     #cm = eval.get_confusion_matrix("input_approvals", "SimpleBERT1_input")
     #print(cm)
     eval.display_confusion_matrix("input_approvals", "SimpleBERT1_input")
+    print(eval.get_latency("input_approvals", "SimpleBERT1_input"))
     #print(eval.get_rate_metrics("input_approvals", "SimpleBERT1_input"))
     print(eval.get_all_rate_metrics())
     print(eval.get_all_classifcation_reports())
