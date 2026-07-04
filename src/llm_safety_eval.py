@@ -25,12 +25,16 @@ class SafetyEvaluator:
         self.ground_truths = ground_truths
 
     def _extract_prediction(self, detector_type: str, detector_name: str) -> list[bool]:
-        """ Extract the predictions for a specified target."""
+        """ Extract the predictions for a specified detector."""
         preds = []
         for res in self.results:
+            if not hasattr(res, detector_type):
+                raise ValueError(f"{detector_type} not found.")
             approval_dict = getattr(res, detector_type, {})
+            if detector_name not in approval_dict:
+                raise ValueError(f"{detector_name} not found in {detector_type}")
             detector_dict = approval_dict.get(detector_name, {})
-            approved = detector_dict.get("approved", False) # TODO: Fail gracefully ?
+            approved = detector_dict.get("approved")
 
             preds.append(approved)
         return preds
