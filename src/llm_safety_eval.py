@@ -21,16 +21,39 @@ from src.llm_safety_harness import GenerationSafetyResult
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
 
 class SafetyEvaluator:
+    """ A tool for evaluating the results of the SafetyHarness with different metrics.
+    This class handles the calculation of several metrics for a single or all detectors:
+        - Confusion Matrix
+        - Classification Report
+        - Latency Metrics
+        - Rate Metrics
+
+    Attributes:
+        results (GenerationSafetyResult): The results of a SafetyHarness run.
+        ground_truths (list[bool]): The correct labels of each prompt input of the results.
+        detector_types (tuple[str, ...]): The detectors that are used in the results. Defaults to ("input_approvals", "internal_approvals", "output_approvals")
+    """
     def __init__(self, results: list[GenerationSafetyResult], ground_truths: list[bool], detector_types: tuple[str, ...] = ("input_approvals", "internal_approvals", "output_approvals")):
-        """ I am a stub"""
-        # TODO: compare ground_truths lengths with each approval lengths
+        """ Initialize the SafetyEvaluator with GenerationSafetyResults and corresponding ground truths"""
+        if len(ground_truths) != len(results):
+            raise ValueError(f"Results Length {len(results)} and Ground Truth Length {len(ground_truths)} does not match.")
 
         self.results = results
         self.y_true = ground_truths
         self.detector_types = detector_types
 
     def _extract_detector_values(self, detector_type: str, detector_name: str, value_key: str, valid_keys: tuple[str, ...] = ("approved", "latency", "class_name")) -> list[bool | float]:
-        """ Extract the predictions for a specified detector."""
+        """ Helper function that extracts the recorded resulting values for a specified detector.
+
+        Arguments:
+            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
+            value_key (str): Which key to extract from the detector.
+            valid_key tuple[str, ...]s: Checks if the value_key is used right now. Defaults to ("approved, "latency", "class_name")
+
+        Returns:
+            A list of all extracted values.
+        """
         values = []
         for res in self.results:
             if not hasattr(res, detector_type):
@@ -45,7 +68,14 @@ class SafetyEvaluator:
         return values
 
     def _get_all_metrics(self, metric_func: Callable[[str, str], dict | np.ndarray]) -> dict[str, dict[str, Any]]:
-        """ Aggregate function to generate all unique values for the given key. """
+        """ Aggregate function to generate all unique values for the given key.
+
+        Arguments:
+            metric_func (Callable): The basix function that gets a specified value.
+
+        Returns:
+            A dict with of dictionaries, whereas each inner dictionary represents a detector with its metrics.
+        """
         metrics = defaultdict(dict)
 
         for res in self.results: # GenerationSafetyResult
@@ -56,24 +86,54 @@ class SafetyEvaluator:
         return metrics
 
     def get_confusion_matrix(self, detector_type: str, detector_name: str) -> np.ndarray:
-        """ Generates a single confusion matrix for a specified detector."""
+        """ Generates a single confusion matrix for a specified detector.
+
+         Arguments:
+            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
+
+        Returns:
+            A confusion matrix with the labels in order: TN, FP, FN, TP
+        """
         y_pred = self._extract_detector_values(detector_type, detector_name, "approved")
         return confusion_matrix(self.y_true, y_pred)
 
     def get_classification_report(self, detector_type: str, detector_name: str) -> dict:
-        """ Generates a single classification report for a specified detector."""
+        """ Generates a single classification report for a specified detector.
+
+         Arguments:
+            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
+
+        Returns:
+            A dictionary with the precision, recall and f1-score.
+        """
         y_pred = self._extract_detector_values(detector_type, detector_name, "approved")
         return classification_report(self.y_true, y_pred, zero_division=np.nan, output_dict=True)
 
     def display_confusion_matrix(self, detector_type: str, detector_name: str):
-        """ Displays a confusion matrix for the given arguments. """
+        """ Displays a confusion matrix for the given arguments.
+
+        Arguments:
+            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
+
+        """
         cm = self.get_confusion_matrix(detector_type, detector_name)
         cm_display = ConfusionMatrixDisplay(cm)
         cm_display.plot()
         plt.show()
 
     def get_rate_metrics(self, detector_type: str, detector_name: str) -> dict[str, float]:
-        """ Generates the metrics TPR, FNR, FPR, TNR, RefusalRate. """
+        """ Generates the metrics TPR, FNR, FPR, TNR, RefusalRate for a given detector..
+
+        Arguments:
+            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
+
+        Returns:
+            A dictionary with the keys "TPR", "FNR", "FPR", "TNR", "Refusal".
+        """
         rates = {}
 
         cm = self.get_confusion_matrix(detector_type, detector_name)
@@ -95,30 +155,58 @@ class SafetyEvaluator:
         return rates
 
     def get_latency(self, detector_type: str, detector_name: str) -> dict[str, float]:
-        """ Generate a single list of latency metrics for a specified detector. """
-        # TODO: Add percentiles e.g. 95, 99 ?
+        """ Generate a single list of latency metrics for a specified detector.
+
+        Arguments:
+            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
+
+        Returns:
+            A dictionary with the keys "mean", "max", "min", "median", "p95", "p99".
+
+        """
         latency_metrics = defaultdict()
         latencies = self._extract_detector_values(detector_type, detector_name, "latency")
         latency_metrics["mean"] = np.mean(latencies)
         latency_metrics["max"] = np.max(latencies)
         latency_metrics["min"] = np.min(latencies)
         latency_metrics["median"] = np.median(latencies)
+        latency_metrics["p99"] = np.percentile(latencies, 99)
+        latency_metrics["p95"] = np.percentile(latencies, 95)
         return latency_metrics
 
-    def get_all_latency_metrics(self):
-        """ Generate all unique latency metrics in bulk. """
+    def get_all_latency_metrics(self) -> dict[str, dict[str, float]]:
+        """ Generate all latency metrics for each unique detector in the results.
+
+        Returns:
+            A dictionary of detector dictionaries with the keys "mean", "max", "min", "median", "p95", "p99".
+        """
         return self._get_all_metrics(self.get_latency)
 
     def get_all_confusion_matrices(self) -> dict[str, dict[str, np.ndarray]]:
-        """ Generate all unique confusion matrices in bulk. """
+        """ Generate all confusion matrices for each unique detector in the results.
+
+        Returns:
+            A dictionary of detector dictionaries with a confusion matrix (labels in order: TN, FP, FN, TP)
+
+        """
         return self._get_all_metrics(self.get_confusion_matrix)
 
     def get_all_classifcation_reports(self) -> dict[str, dict[str, dict]]:
-        """ Generate all unique classification reports in bulk. """
+        """ Generate all classification reports for each unique detector in the results.
+
+         Returns:
+            A dictionary of detector dictionaries with the precision, recall and f1-score.
+
+         """
         return self._get_all_metrics(self.get_classification_report)
 
     def get_all_rate_metrics(self) -> dict[str, dict[str, dict]]:
-        """ Generate all unique rate metrics in bulk."""
+        """ Generate rate metrics for each unique detector in the results.
+
+        Returns:
+            A dictionary of detector dictionaries with the keys "TPR", "FNR", "FPR", "TNR", "Refusal".
+        """
         return self._get_all_metrics(self.get_rate_metrics)
 
 if __name__ == "__main__":
