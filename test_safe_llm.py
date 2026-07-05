@@ -1,5 +1,5 @@
-from src.llm_safety_harness import SafeLLM
-from src.detectors.simple_detector import SimpleDetector
+from safeguard_llm.llm_safety_harness import SafeLLM
+from safeguard_llm.detectors.simple_detector import SimpleDetector
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 #AI Generated

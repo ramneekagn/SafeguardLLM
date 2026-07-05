@@ -1,4 +1,4 @@
-from src.llm_safety_harness import SafeLLM
+from safeguard_llm.llm_safety_harness import SafeLLM
 from src.filters.simple_filter import SimpleDetector
 from transformers import AutoModelForCausalLM, AutoTokenizer
 model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-0.6B", device_map="auto")

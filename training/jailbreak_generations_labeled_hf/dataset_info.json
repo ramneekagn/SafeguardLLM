@@ -1,0 +1,20 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "prompt": {
+      "dtype": "large_string",
+      "_type": "Value"
+    },
+    "generation": {
+      "dtype": "large_string",
+      "_type": "Value"
+    },
+    "labels": {
+      "dtype": "large_string",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}
