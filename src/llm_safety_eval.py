@@ -239,7 +239,7 @@ class SafetyEvaluator:
         return self._get_all_metrics(self.get_rate_metrics)
 
     def _print_metrics_in_table(self, metrics: dict) -> None:
-        """ Print all the given metrics in a table format
+        """Print all the given metrics in a table format.
 
         Arguments:
             title (str): The title of the table.
@@ -273,24 +273,41 @@ class SafetyEvaluator:
     def print_all_rates_metrics(self, rates: dict) -> None:
         self._print_metrics_in_table(rates)
 
-    def print_latency_metrics(self, latency: dict) -> None:
-        # TODO: Single print
-        self._print_metrics_in_table(latency)
-
-    def print_rate_metrics(self, rates: dict) -> None:
-        # TODO: single print
-        self._print_metrics_in_table(rates)
-
     def print_all_classification_reports(self, metrics: dict) -> None:
-        # TODO: Bad formatting
-        """
-        | Detectors              | False                                                              | True                                                                              |   accuracy | macro avg                                                                         | weighted avg                                                                      |
-        |------------------------|--------------------------------------------------------------------|-----------------------------------------------------------------------------------|------------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-        | SimpleBERT1_input      | {'precision': nan, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0} | {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.6666666666666666, 'support': 1.0} |        0.5 | {'precision': 0.5, 'recall': 0.5, 'f1-score': 0.3333333333333333, 'support': 2.0} | {'precision': 0.5, 'recall': 0.5, 'f1-score': 0.3333333333333333, 'support': 2.0} |
-        | SimpleDetector1_input  | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0} | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0}                |        0   | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                |
-        | SimpleDetector3_input  | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0} | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0}                |        0   | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                |
-        | SimpleDetector43_input | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0} | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0}                |        0   | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                |
-        """
+        approval_stages = list(iter(metrics))
+        headers = [
+            "Class/Metric",
+            "Precision",
+            "Recall",
+            "F1-Score",
+            "Support",
+        ]
+
+        for stage in approval_stages:
+            print("=" * len(stage))
+            print(stage.upper())
+            print("=" * len(stage))
+
+            for detector, class_type in metrics[stage].items():
+                print("-" * len(detector))
+                print(detector.upper())
+                print("-" * len(detector))
+                table_metrics = []
+                accuracy = None
+                for class_label, class_values in class_type.items():
+                    if isinstance(class_values, dict):
+                        precision = class_values["precision"]
+                        recall = class_values["precision"]
+                        f1score = class_values["f1-score"]
+                        support = class_values["support"]
+                        row = [class_label, precision, recall, f1score, support]
+                        table_metrics.append(row)
+                    else:
+                        accuracy = class_values
+
+                print(tabulate(table_metrics, headers, tablefmt="github"))
+                print(f"***** Overall Accuracy {accuracy} *****")
+
 
 if __name__ == "__main__":
     cur_dir = Path(__file__).resolve()
@@ -299,11 +316,38 @@ if __name__ == "__main__":
         results = yaml.load(f, Loader=yaml.UnsafeLoader)
 
     eval = SafetyEvaluator(results, [True, False])
-    metrics = eval.get_all_rate_metrics()
+    metrics = eval.get_all_classification_reports()
+    approval_stages = list(iter(metrics))
+    headers = [
+        "Class/Metric",
+        "Precision",
+        "Recall",
+        "F1-Score",
+        "Support",
+    ]
 
-    approval_stage = list(iter(metrics))
-    first_approval_stage = approval_stage[0]
-    first_detector = next(iter(metrics[first_approval_stage]))
-    metrics_headers = list(iter(metrics[first_approval_stage][first_detector]))
+    for stage in approval_stages:
+        print("=" * len(stage))
+        print(stage.upper())
+        print("=" * len(stage))
 
-    print(metrics_headers)
+        for detector, class_type in metrics[stage].items():
+            print("-" * len(detector))
+            print(detector.upper())
+            print("-" * len(detector))
+            table_metrics = []
+            accuracy = None
+            for class_label, class_values in class_type.items():
+                # check classification report dict
+                if isinstance(class_values, dict):
+                    precision = class_values["precision"]
+                    recall = class_values["precision"]
+                    f1score = class_values["f1-score"]
+                    support = class_values["support"]
+                    row = [class_label, precision, recall, f1score, support]
+                    table_metrics.append(row)
+                else: # check accuracy
+                    accuracy = class_values
+
+            print(tabulate(table_metrics, headers, tablefmt="github"))
+            print(f"***** Overall Accuracy {accuracy} *****")
