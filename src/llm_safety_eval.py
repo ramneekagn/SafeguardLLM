@@ -268,12 +268,30 @@ class SafetyEvaluator:
             print(tabulate(table_metrics, headers, tablefmt="github"))
 
     def print_all_latency_metrics(self, latencies: dict) -> None:
+        """Print the latency metrics for each approval stage and detector
+
+
+        Arguments:
+            latencies: Dictionary of the get_all_latency_metrics function.
+        """
         self._print_metrics_in_table(latencies)
 
     def print_all_rates_metrics(self, rates: dict) -> None:
+        """Print the rates metrics for each approval stage and detector
+
+
+        Arguments:
+            rates: Dictionary of the get_all_rate_metrics function.
+        """
         self._print_metrics_in_table(rates)
 
     def print_all_classification_reports(self, metrics: dict) -> None:
+        """ Print the classification reports for each approval stage and detector
+
+
+        Arguments:
+            metrics: Dictionary of the get_all_classification_reports function.
+        """
         approval_stages = list(iter(metrics))
         headers = [
             "Class/Metric",
@@ -341,7 +359,7 @@ if __name__ == "__main__":
                 # check classification report dict
                 if isinstance(class_values, dict):
                     precision = class_values["precision"]
-                    recall = class_values["precision"]
+                    recall = class_values["recall"]
                     f1score = class_values["f1-score"]
                     support = class_values["support"]
                     row = [class_label, precision, recall, f1score, support]
