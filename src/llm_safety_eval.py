@@ -5,12 +5,18 @@ from typing import Callable, Any
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
+from tabulate import tabulate
 
 from src.llm_safety_harness import GenerationSafetyResult
-from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    ConfusionMatrixDisplay,
+)
+
 
 class SafetyEvaluator:
-    """ A tool for evaluating the results of the SafetyHarness with different metrics.
+    """A tool for evaluating the results of the SafetyHarness with different metrics.
     This class handles the calculation of several metrics for a single or all detectors:
         - Confusion Matrix
         - Classification Report
@@ -22,17 +28,35 @@ class SafetyEvaluator:
         ground_truths (list[bool]): The correct labels of each prompt input of the results.
         detector_types (tuple[str, ...]): The detectors that are used in the results. Defaults to ("input_approvals", "internal_approvals", "output_approvals")
     """
-    def __init__(self, results: list[GenerationSafetyResult], ground_truths: list[bool], detector_types: tuple[str, ...] = ("input_approvals", "internal_approvals", "output_approvals")):
-        """ Initialize the SafetyEvaluator with GenerationSafetyResults and corresponding ground truths"""
+
+    def __init__(
+        self,
+        results: list[GenerationSafetyResult],
+        ground_truths: list[bool],
+        detector_types: tuple[str, ...] = (
+            "input_approvals",
+            "internal_approvals",
+            "output_approvals",
+        ),
+    ):
+        """Initialize the SafetyEvaluator with GenerationSafetyResults and corresponding ground truths"""
         if len(ground_truths) != len(results):
-            raise ValueError(f"Results Length {len(results)} and Ground Truth Length {len(ground_truths)} does not match.")
+            raise ValueError(
+                f"Results Length {len(results)} and Ground Truth Length {len(ground_truths)} does not match."
+            )
 
         self.results = results
         self.y_true = ground_truths
         self.detector_types = detector_types
 
-    def _extract_detector_values(self, detector_type: str, detector_name: str, value_key: str, valid_keys: tuple[str, ...] = ("approved", "latency", "class_name")) -> list[bool | float]:
-        """ Helper function that extracts the recorded resulting values for a specified detector.
+    def _extract_detector_values(
+        self,
+        detector_type: str,
+        detector_name: str,
+        value_key: str,
+        valid_keys: tuple[str, ...] = ("approved", "latency", "class_name"),
+    ) -> list[bool | float]:
+        """Helper function that extracts the recorded resulting values for a specified detector.
 
         Arguments:
             detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
@@ -46,18 +70,24 @@ class SafetyEvaluator:
         values = []
         for res in self.results:
             if not hasattr(res, detector_type):
-                raise ValueError(f"'{detector_type}' is not a valid Detector Type.\n Valid are: {self.detector_types}")
+                raise ValueError(
+                    f"'{detector_type}' is not a valid Detector Type.\n Valid are: {self.detector_types}"
+                )
             approval_dict = getattr(res, detector_type, {})
             if detector_name not in approval_dict:
-                raise ValueError(f"Detector '{detector_name}' not found in '{detector_type}'.")
+                raise ValueError(
+                    f"Detector '{detector_name}' not found in '{detector_type}'."
+                )
             detector_dict = approval_dict.get(detector_name, {})
             value = detector_dict.get(value_key)
 
             values.append(value)
         return values
 
-    def _get_all_metrics(self, metric_func: Callable[[str, str], dict | np.ndarray]) -> dict[str, dict[str, Any]]:
-        """ Aggregate function to generate all unique values for the given key.
+    def _get_all_metrics(
+        self, metric_func: Callable[[str, str], dict | np.ndarray]
+    ) -> dict[str, dict[str, Any]]:
+        """Aggregate function to generate all unique values for the given key.
 
         Arguments:
             metric_func (Callable): The basix function that gets a specified value.
@@ -67,15 +97,19 @@ class SafetyEvaluator:
         """
         metrics = defaultdict(dict)
 
-        for res in self.results: # GenerationSafetyResult
-            for detector_type in self.detector_types: # e.g. input_approvals
-                approval_dict = getattr(res, detector_type) # get input_approvals
+        for res in self.results:  # GenerationSafetyResult
+            for detector_type in self.detector_types:  # e.g. input_approvals
+                approval_dict = getattr(res, detector_type)  # get input_approvals
                 for detector_name, _ in approval_dict.items():
-                    metrics[detector_type][detector_name] = metric_func(detector_type, detector_name)
+                    metrics[detector_type][detector_name] = metric_func(
+                        detector_type, detector_name
+                    )
         return metrics
 
-    def get_confusion_matrix(self, detector_type: str, detector_name: str) -> np.ndarray:
-        """ Generates a single confusion matrix for a specified detector.
+    def get_confusion_matrix(
+        self, detector_type: str, detector_name: str
+    ) -> np.ndarray:
+        """Generates a single confusion matrix for a specified detector.
 
          Arguments:
             detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
@@ -88,7 +122,7 @@ class SafetyEvaluator:
         return confusion_matrix(self.y_true, y_pred)
 
     def get_classification_report(self, detector_type: str, detector_name: str) -> dict:
-        """ Generates a single classification report for a specified detector.
+        """Generates a single classification report for a specified detector.
 
          Arguments:
             detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
@@ -98,10 +132,12 @@ class SafetyEvaluator:
             A dictionary with the precision, recall and f1-score.
         """
         y_pred = self._extract_detector_values(detector_type, detector_name, "approved")
-        return classification_report(self.y_true, y_pred, zero_division=np.nan, output_dict=True)
+        return classification_report(
+            self.y_true, y_pred, zero_division=np.nan, output_dict=True
+        )
 
-    def display_confusion_matrix(self, detector_type: str, detector_name: str):
-        """ Displays a confusion matrix for the given arguments.
+    def display_confusion_matrix(self, detector_type: str, detector_name: str) -> None:
+        """Displays a confusion matrix for the given arguments.
 
         Arguments:
             detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
@@ -113,8 +149,10 @@ class SafetyEvaluator:
         cm_display.plot()
         plt.show()
 
-    def get_rate_metrics(self, detector_type: str, detector_name: str) -> dict[str, float]:
-        """ Generates the metrics TPR, FNR, FPR, TNR, RefusalRate for a given detector..
+    def get_rate_metrics(
+        self, detector_type: str, detector_name: str
+    ) -> dict[str, float]:
+        """Generates the metrics TPR, FNR, FPR, TNR, RefusalRate for a given detector..
 
         Arguments:
             detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
@@ -130,21 +168,21 @@ class SafetyEvaluator:
         # TrueNeg, FalsePos, FalseNeg, TruePos
         tn, fp, fn, tp = cm.ravel()
 
-        pos_pred = tp + fp if (tp+fn) > 0 else np.nan
-        pos = tp + fn if (tp+fn) > 0 else np.nan
-        neg = fp + tn if (fp+tn) > 0 else np.nan
-        total = fp + tn + tp + fn if (fp+tn+tp+fn) > 0 else np.nan
+        pos_pred = tp + fp if (tp + fn) > 0 else np.nan
+        pos = tp + fn if (tp + fn) > 0 else np.nan
+        neg = fp + tn if (fp + tn) > 0 else np.nan
+        total = fp + tn + tp + fn if (fp + tn + tp + fn) > 0 else np.nan
 
-        rates["TPR"] = tp / pos # recall
-        rates["FNR"] = fn / pos # miss rate
-        rates["FPR"] = fp / neg # false alarm
-        rates["TNR"] = tn / neg # selectivity
+        rates["TPR"] = tp / pos  # recall
+        rates["FNR"] = fn / pos  # miss rate
+        rates["FPR"] = fp / neg  # false alarm
+        rates["TNR"] = tn / neg  # selectivity
         rates["Refusal"] = pos_pred / total
 
         return rates
 
     def get_latency(self, detector_type: str, detector_name: str) -> dict[str, float]:
-        """ Generate a single list of latency metrics for a specified detector.
+        """Generate a single list of latency metrics for a specified detector.
 
         Arguments:
             detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
@@ -155,7 +193,9 @@ class SafetyEvaluator:
 
         """
         latency_metrics = defaultdict()
-        latencies = self._extract_detector_values(detector_type, detector_name, "latency")
+        latencies = self._extract_detector_values(
+            detector_type, detector_name, "latency"
+        )
         latency_metrics["mean"] = np.mean(latencies)
         latency_metrics["max"] = np.max(latencies)
         latency_metrics["min"] = np.min(latencies)
@@ -165,7 +205,7 @@ class SafetyEvaluator:
         return latency_metrics
 
     def get_all_latency_metrics(self) -> dict[str, dict[str, float]]:
-        """ Generate all latency metrics for each unique detector in the results.
+        """Generate all latency metrics for each unique detector in the results.
 
         Returns:
             A dictionary of detector dictionaries with the keys "mean", "max", "min", "median", "p95", "p99".
@@ -173,7 +213,7 @@ class SafetyEvaluator:
         return self._get_all_metrics(self.get_latency)
 
     def get_all_confusion_matrices(self) -> dict[str, dict[str, np.ndarray]]:
-        """ Generate all confusion matrices for each unique detector in the results.
+        """Generate all confusion matrices for each unique detector in the results.
 
         Returns:
             A dictionary of detector dictionaries with a confusion matrix (labels in order: TN, FP, FN, TP)
@@ -181,19 +221,89 @@ class SafetyEvaluator:
         """
         return self._get_all_metrics(self.get_confusion_matrix)
 
-    def get_all_classifcation_reports(self) -> dict[str, dict[str, dict]]:
-        """ Generate all classification reports for each unique detector in the results.
+    def get_all_classification_reports(self) -> dict[str, dict[str, dict]]:
+        """Generate all classification reports for each unique detector in the results.
 
-         Returns:
-            A dictionary of detector dictionaries with the precision, recall and f1-score.
+        Returns:
+           A dictionary of detector dictionaries with the precision, recall and f1-score.
 
-         """
+        """
         return self._get_all_metrics(self.get_classification_report)
 
     def get_all_rate_metrics(self) -> dict[str, dict[str, dict]]:
-        """ Generate rate metrics for each unique detector in the results.
+        """Generate rate metrics for each unique detector in the results.
 
         Returns:
             A dictionary of detector dictionaries with the keys "TPR", "FNR", "FPR", "TNR", "Refusal".
         """
         return self._get_all_metrics(self.get_rate_metrics)
+
+    def _print_metrics_in_table(self, metrics: dict) -> None:
+        """ Print all the given metrics in a table format
+
+        Arguments:
+            title (str): The title of the table.
+            metrics (dict): The captured metrics to display.
+        """
+
+        approval_stages = list(iter(metrics))
+        first_approval_stage = approval_stage[0]
+        first_detector = next(iter(metrics[first_approval_stage]))
+        metrics_headers = list(iter(metrics[first_approval_stage][first_detector]))
+        headers = ["Detectors"] + metrics_headers
+
+        for stage in approval_stages:
+            print("=" * len(stage))
+            print(stage.upper())
+            print("=" * len(stage))
+
+            table_metrics = []
+            detectors = list(iter(metrics[stage]))
+
+            for detector in detectors:
+                values = metrics[stage][detector].values()
+                row = [detector] + list(values)
+                table_metrics.append(row)
+
+            print(tabulate(table_metrics, headers, tablefmt="github"))
+
+    def print_all_latency_metrics(self, latencies: dict) -> None:
+        self._print_metrics_in_table(latencies)
+
+    def print_all_rates_metrics(self, rates: dict) -> None:
+        self._print_metrics_in_table(rates)
+
+    def print_latency_metrics(self, latency: dict) -> None:
+        # TODO: Single print
+        self._print_metrics_in_table(latency)
+
+    def print_rate_metrics(self, rates: dict) -> None:
+        # TODO: single print
+        self._print_metrics_in_table(rates)
+
+    def print_all_classification_reports(self, metrics: dict) -> None:
+        # TODO: Bad formatting
+        """
+        | Detectors              | False                                                              | True                                                                              |   accuracy | macro avg                                                                         | weighted avg                                                                      |
+        |------------------------|--------------------------------------------------------------------|-----------------------------------------------------------------------------------|------------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+        | SimpleBERT1_input      | {'precision': nan, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0} | {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.6666666666666666, 'support': 1.0} |        0.5 | {'precision': 0.5, 'recall': 0.5, 'f1-score': 0.3333333333333333, 'support': 2.0} | {'precision': 0.5, 'recall': 0.5, 'f1-score': 0.3333333333333333, 'support': 2.0} |
+        | SimpleDetector1_input  | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0} | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0}                |        0   | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                |
+        | SimpleDetector3_input  | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0} | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0}                |        0   | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                |
+        | SimpleDetector43_input | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0} | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 1.0}                |        0   | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                | {'precision': 0.0, 'recall': 0.0, 'f1-score': 0.0, 'support': 2.0}                |
+        """
+
+if __name__ == "__main__":
+    cur_dir = Path(__file__).resolve()
+    yaml_path = cur_dir.parent / "results.yaml"
+    with open(yaml_path, "r") as f:
+        results = yaml.load(f, Loader=yaml.UnsafeLoader)
+
+    eval = SafetyEvaluator(results, [True, False])
+    metrics = eval.get_all_rate_metrics()
+
+    approval_stage = list(iter(metrics))
+    first_approval_stage = approval_stage[0]
+    first_detector = next(iter(metrics[first_approval_stage]))
+    metrics_headers = list(iter(metrics[first_approval_stage][first_detector]))
+
+    print(metrics_headers)
