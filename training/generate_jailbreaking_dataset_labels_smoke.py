@@ -112,7 +112,7 @@ ds = load_dataset("csv", data_files="jailbreak_generations.csv")
 smoke_ds = ds["train"].select(range(100))
 
 # smoke test
-smoke_labels = label_dataset(smoke_ds)
+smoke_labels = label_dataset(smoke_ds["train"])
 print(list(zip(smoke_ds["prompt"], smoke_ds["generation"], smoke_labels)))
 
 df = pd.DataFrame({
