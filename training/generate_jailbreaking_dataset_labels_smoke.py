@@ -97,6 +97,7 @@ def label_dataset(dataset) -> dict[str, str]:
         all_labels.extend(batch_labels)
     return all_labels
 
+set_seed(40)
 ds = load_dataset("csv", data_files="jailbreak_generations_10k.csv")
 smoke_ds = ds["train"].select(range(100))
 

@@ -2,6 +2,7 @@ from datasets import load_dataset, Dataset
 from transformers import set_seed,AutoModelForCausalLM,AutoTokenizer
 import pandas as pd
 import torch 
+from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
 torch.cuda.is_available()
 
@@ -90,31 +91,14 @@ def label_dataset(dataset) -> dict[str, str]:
     cls = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map="auto")
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, truncation_side="left", padding_side="left")
     all_labels = []
-    for batch in dataloader:
+    for batch in tqdm(dataloader):
         prompts = batch["prompt"]
         generations = batch["generation"]
         batch_labels = _grade_generations_harmbench(cls, tokenizer, prompts, generations)
         all_labels.extend(batch_labels)
     return all_labels
-
-ds = load_dataset("csv", data_files="jailbreak_generations_10k.csv")
-labels = label_dataset(ds)
-df = pd.DataFrame({
-    "prompt": ds["train"]["prompt"],
-    "generation": ds["train"]["generation"],
-    "labels": labels
-})
-hf_dataset = Dataset.from_pandas(df)
-df.to_csv("jailbreak_generations_labeled.csv", index=False)
-hf_dataset.save_to_disk("jailbreak_generations_labeled_hf")
-
+set_seed(40)
 ds = load_dataset("csv", data_files="jailbreak_generations.csv")
-smoke_ds = ds["train"].select(range(100))
-
-# smoke test
-smoke_labels = label_dataset(smoke_ds)
-print(list(zip(smoke_ds["prompt"], smoke_ds["generation"], smoke_labels)))
-
 # full run
 labels = label_dataset(ds["train"])
 
