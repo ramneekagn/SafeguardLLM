@@ -247,7 +247,7 @@ class SafetyEvaluator:
         """
 
         approval_stages = list(iter(metrics))
-        first_approval_stage = approval_stage[0]
+        first_approval_stage = approval_stages[0]
         first_detector = next(iter(metrics[first_approval_stage]))
         metrics_headers = list(iter(metrics[first_approval_stage][first_detector]))
         headers = ["Detectors"] + metrics_headers
@@ -315,7 +315,7 @@ class SafetyEvaluator:
                 for class_label, class_values in class_type.items():
                     if isinstance(class_values, dict):
                         precision = class_values["precision"]
-                        recall = class_values["precision"]
+                        recall = class_values["recall"]
                         f1score = class_values["f1-score"]
                         support = class_values["support"]
                         row = [class_label, precision, recall, f1score, support]
@@ -335,37 +335,4 @@ if __name__ == "__main__":
 
     eval = SafetyEvaluator(results, [True, False])
     metrics = eval.get_all_classification_reports()
-    approval_stages = list(iter(metrics))
-    headers = [
-        "Class/Metric",
-        "Precision",
-        "Recall",
-        "F1-Score",
-        "Support",
-    ]
-
-    for stage in approval_stages:
-        print("=" * len(stage))
-        print(stage.upper())
-        print("=" * len(stage))
-
-        for detector, class_type in metrics[stage].items():
-            print("-" * len(detector))
-            print(detector.upper())
-            print("-" * len(detector))
-            table_metrics = []
-            accuracy = None
-            for class_label, class_values in class_type.items():
-                # check classification report dict
-                if isinstance(class_values, dict):
-                    precision = class_values["precision"]
-                    recall = class_values["recall"]
-                    f1score = class_values["f1-score"]
-                    support = class_values["support"]
-                    row = [class_label, precision, recall, f1score, support]
-                    table_metrics.append(row)
-                else: # check accuracy
-                    accuracy = class_values
-
-            print(tabulate(table_metrics, headers, tablefmt="github"))
-            print(f"***** Overall Accuracy {accuracy} *****")
+    eval.print_all_classification_reports(metrics)
