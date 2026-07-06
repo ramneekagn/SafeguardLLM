@@ -98,21 +98,10 @@ def label_dataset(dataset) -> dict[str, str]:
     return all_labels
 
 ds = load_dataset("csv", data_files="jailbreak_generations_10k.csv")
-labels = label_dataset(ds)
-df = pd.DataFrame({
-    "prompt": ds["train"]["prompt"],
-    "generation": ds["train"]["generation"],
-    "labels": labels
-})
-hf_dataset = Dataset.from_pandas(df)
-df.to_csv("jailbreak_generations_labeled.csv", index=False)
-hf_dataset.save_to_disk("jailbreak_generations_labeled_hf")
-
-ds = load_dataset("csv", data_files="jailbreak_generations.csv")
 smoke_ds = ds["train"].select(range(100))
 
 # smoke test
-smoke_labels = label_dataset(smoke_ds["train"])
+smoke_labels = label_dataset(smoke_ds)
 print(list(zip(smoke_ds["prompt"], smoke_ds["generation"], smoke_labels)))
 
 df = pd.DataFrame({
