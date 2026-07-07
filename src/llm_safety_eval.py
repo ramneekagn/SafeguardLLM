@@ -168,7 +168,7 @@ class SafetyEvaluator:
         # TrueNeg, FalsePos, FalseNeg, TruePos
         tn, fp, fn, tp = cm.ravel()
 
-        pos_pred = tp + fp if (tp + fn) > 0 else np.nan
+        pos_pred = tp + fp if (tp + fp) > 0 else np.nan
         pos = tp + fn if (tp + fn) > 0 else np.nan
         neg = fp + tn if (fp + tn) > 0 else np.nan
         total = fp + tn + tp + fn if (fp + tn + tp + fn) > 0 else np.nan
