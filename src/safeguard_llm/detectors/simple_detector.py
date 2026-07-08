@@ -4,7 +4,7 @@ class SimpleDetector(Detector):
     def __init__(self):
         super().__init__()
 
-    def validate(self, inputs: list[str]) -> list[bool]: 
+    def is_unsafe(self, inputs: list[str]) -> list[bool]: 
         harmful_list = ["system instructions", "attack", "exploit", "harmful"]
         response = [True]*len(inputs)
         for i, input in enumerate(inputs): 

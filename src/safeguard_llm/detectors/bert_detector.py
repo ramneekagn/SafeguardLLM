@@ -27,7 +27,7 @@ class BERTdetector(Detector):
         self.model.eval()
 
 
-    def validate(self, inputs: list[str]) -> list[bool]:
+    def is_unsafe(self, inputs: list[str]) -> list[bool]:
         """
         Validates a text batch against the threshold of the BERT model.
 

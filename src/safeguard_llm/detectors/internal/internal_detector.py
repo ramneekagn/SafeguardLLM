@@ -10,7 +10,7 @@ class InternalDetector(ABC):
 
     #analyse and approve the input string 
     @abstractmethod
-    def validate(self) -> list[bool]: 
+    def is_unsafe(self) -> list[bool]: 
         pass
 
     @abstractmethod

@@ -16,7 +16,7 @@ class SimpleInternalDetector(InternalDetector):
         self.pos += 1
 
     #once the output is finished we validate if any are above threshold
-    def validate(self) -> list[bool]: 
+    def is_unsafe(self) -> list[bool]: 
         stacked = torch.stack(self.activation_cache, dim = 0)
         mean = torch.mean(stacked, dim=0)
         comparison_tensor = (mean > self.threshold).any(dim=-1)  

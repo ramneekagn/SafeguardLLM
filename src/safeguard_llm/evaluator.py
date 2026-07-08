@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
-from src.llm_safety_harness import GenerationSafetyResult
+from safeguard_llm.safety_harness import GenerationSafetyResult
 from sklearn.metrics import (
     confusion_matrix,
     classification_report,
@@ -26,7 +26,7 @@ class SafetyEvaluator:
     Attributes:
         results (GenerationSafetyResult): The results of a SafetyHarness run.
         ground_truths (list[bool]): The correct labels of each prompt input of the results.
-        detector_types (tuple[str, ...]): The detectors that are used in the results. Defaults to ("input_approvals", "internal_approvals", "output_approvals")
+        detector_types (tuple[str, ...]): The detectors that are used in the results. Defaults to ("input_disapprovals", "internal_disapprovals", "output_disapprovals")
     """
 
     def __init__(
@@ -34,9 +34,9 @@ class SafetyEvaluator:
         results: list[GenerationSafetyResult],
         ground_truths: list[bool],
         detector_types: tuple[str, ...] = (
-            "input_approvals",
-            "internal_approvals",
-            "output_approvals",
+            "input_disapprovals",
+            "internal_disapprovals",
+            "output_disapprovals",
         ),
     ):
         """Initialize the SafetyEvaluator with GenerationSafetyResults and corresponding ground truths"""
@@ -54,12 +54,12 @@ class SafetyEvaluator:
         detector_type: str,
         detector_name: str,
         value_key: str,
-        valid_keys: tuple[str, ...] = ("approved", "latency", "class_name"),
+        valid_keys: tuple[str, ...] = ("disapproved", "latency", "class_name"),
     ) -> list[bool | float]:
         """Helper function that extracts the recorded resulting values for a specified detector.
 
         Arguments:
-            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
             detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
             value_key (str): Which key to extract from the detector.
             valid_key tuple[str, ...]s: Checks if the value_key is used right now. Defaults to ("approved, "latency", "class_name")
@@ -73,20 +73,29 @@ class SafetyEvaluator:
                 raise ValueError(
                     f"'{detector_type}' is not a valid Detector Type.\n Valid are: {self.detector_types}"
                 )
-            approval_dict = getattr(res, detector_type, {})
-            if detector_name not in approval_dict:
+            disapproval_dict = getattr(res, detector_type, {})
+            if detector_name not in disapproval_dict:
                 raise ValueError(
                     f"Detector '{detector_name}' not found in '{detector_type}'."
                 )
-            detector_dict = approval_dict.get(detector_name, {})
+            detector_dict = disapproval_dict.get(detector_name, {})
             value = detector_dict.get(value_key)
 
             values.append(value)
         return values
 
-    def _get_all_metrics(
-        self, metric_func: Callable[[str, str], dict | np.ndarray]
-    ) -> dict[str, dict[str, Any]]:
+
+       
+    def _get_detector_names(self) -> dict[str, list[str]]:
+        """Unique detector names per detector type, across all results."""
+        names: dict[str, set[str]] = {dt: set() for dt in self.detector_types}
+        for res in self.results:
+            for detector_type in self.detector_types:
+                disapproval_dict = getattr(res, detector_type, {})
+                names[detector_type].update(disapproval_dict.keys())
+        return {dt: sorted(ns) for dt, ns in names.items()}
+
+    def _get_all_metrics(self, metric_func):
         """Aggregate function to generate all unique values for the given key.
 
         Arguments:
@@ -96,42 +105,37 @@ class SafetyEvaluator:
             A dict with of dictionaries, whereas each inner dictionary represents a detector with its metrics.
         """
         metrics = defaultdict(dict)
-
-        for res in self.results:  # GenerationSafetyResult
-            for detector_type in self.detector_types:  # e.g. input_approvals
-                approval_dict = getattr(res, detector_type)  # get input_approvals
-                for detector_name, _ in approval_dict.items():
-                    metrics[detector_type][detector_name] = metric_func(
-                        detector_type, detector_name
-                    )
+        for detector_type, detector_names in self._get_detector_names().items():
+            for detector_name in detector_names:
+                metrics[detector_type][detector_name] = metric_func(detector_type, detector_name)
         return metrics
-
     def get_confusion_matrix(
+            
         self, detector_type: str, detector_name: str
     ) -> np.ndarray:
         """Generates a single confusion matrix for a specified detector.
 
          Arguments:
-            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
             detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
 
         Returns:
             A confusion matrix with the labels in order: TN, FP, FN, TP
         """
-        y_pred = self._extract_detector_values(detector_type, detector_name, "approved")
+        y_pred = self._extract_detector_values(detector_type, detector_name, "disapproved")
         return confusion_matrix(self.y_true, y_pred)
 
     def get_classification_report(self, detector_type: str, detector_name: str) -> dict:
         """Generates a single classification report for a specified detector.
 
          Arguments:
-            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
             detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
 
         Returns:
             A dictionary with the precision, recall and f1-score.
         """
-        y_pred = self._extract_detector_values(detector_type, detector_name, "approved")
+        y_pred = self._extract_detector_values(detector_type, detector_name, "disapproved")
         return classification_report(
             self.y_true, y_pred, zero_division=np.nan, output_dict=True
         )
@@ -140,7 +144,7 @@ class SafetyEvaluator:
         """Displays a confusion matrix for the given arguments.
 
         Arguments:
-            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
             detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
 
         """
@@ -155,7 +159,7 @@ class SafetyEvaluator:
         """Generates the metrics TPR, FNR, FPR, TNR, RefusalRate for a given detector..
 
         Arguments:
-            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
             detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
 
         Returns:
@@ -185,7 +189,7 @@ class SafetyEvaluator:
         """Generate a single list of latency metrics for a specified detector.
 
         Arguments:
-            detector_type (str): The type of the detector e.g. input_approvals, internal_approvals, output_approvals
+            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
             detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
 
         Returns:
@@ -246,13 +250,13 @@ class SafetyEvaluator:
             metrics (dict): The captured metrics to display.
         """
 
-        approval_stages = list(iter(metrics))
-        first_approval_stage = approval_stages[0]
-        first_detector = next(iter(metrics[first_approval_stage]))
-        metrics_headers = list(iter(metrics[first_approval_stage][first_detector]))
+        disapproval_stages = list(iter(metrics))
+        first_disapproval_stage = disapproval_stages[0]
+        first_detector = next(iter(metrics[first_disapproval_stage]))
+        metrics_headers = list(iter(metrics[first_disapproval_stage][first_detector]))
         headers = ["Detectors"] + metrics_headers
 
-        for stage in approval_stages:
+        for stage in disapproval_stages:
             print("=" * len(stage))
             print(stage.upper())
             print("=" * len(stage))
@@ -268,7 +272,7 @@ class SafetyEvaluator:
             print(tabulate(table_metrics, headers, tablefmt="github"))
 
     def print_all_latency_metrics(self, latencies: dict) -> None:
-        """Print the latency metrics for each approval stage and detector
+        """Print the latency metrics for each disapproval stage and detector
 
 
         Arguments:
@@ -277,7 +281,7 @@ class SafetyEvaluator:
         self._print_metrics_in_table(latencies)
 
     def print_all_rates_metrics(self, rates: dict) -> None:
-        """Print the rates metrics for each approval stage and detector
+        """Print the rates metrics for each disapproval stage and detector
 
 
         Arguments:
@@ -286,13 +290,13 @@ class SafetyEvaluator:
         self._print_metrics_in_table(rates)
 
     def print_all_classification_reports(self, metrics: dict) -> None:
-        """ Print the classification reports for each approval stage and detector
+        """ Print the classification reports for each disapproval stage and detector
 
 
         Arguments:
             metrics: Dictionary of the get_all_classification_reports function.
         """
-        approval_stages = list(iter(metrics))
+        disapproval_stages = list(iter(metrics))
         headers = [
             "Class/Metric",
             "Precision",
@@ -301,7 +305,7 @@ class SafetyEvaluator:
             "Support",
         ]
 
-        for stage in approval_stages:
+        for stage in disapproval_stages:
             print("=" * len(stage))
             print(stage.upper())
             print("=" * len(stage))

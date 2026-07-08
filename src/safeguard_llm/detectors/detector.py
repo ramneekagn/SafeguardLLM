@@ -6,7 +6,7 @@ class Detector(ABC):
 
     #analyse and approve the input string 
     @abstractmethod
-    def validate(self,input: list[str]): 
+    def is_unsafe(self,input: list[str]): 
         pass
 
     
