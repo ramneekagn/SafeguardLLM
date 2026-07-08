@@ -3,27 +3,27 @@ safety_config:
 
 input_detectors:
   - name: "SimpleDetector1_input"
-    class_path: "src.detectors.simple_detector.SimpleDetector"
+    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
     args: null
     
   - name: "SimpleDetector43_input"
-    class_path: "src.detectors.simple_detector.SimpleDetector"
+    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
     args: null
 
   - name: "SimpleDetector3_input"
-    class_path: "src.detectors.simple_detector.SimpleDetector"
+    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
     args: null
   - name: "SimpleBERT1_input"
-    class_path: "src.detectors.bert_detector.BERTdetector"
+    class_path: "safeguard_llm.detectors.bert_detector.BERTdetector"
     args:
       model_path: "google-bert/bert-base-uncased"
       device: "cuda"
 
 internal_detectors: 
   - name: "SimpleInternalDetector1"
-    class_path: "src.detectors.internal.linear_probe_detector.LinearProbeDetector"
+    class_path: "safeguard_llm.detectors.internal.linear_probe_detector.LinearProbeDetector"
     args: 
-      model_path: "src/models/linear_probe/model_linear.pt"
+      model_path: "src/safeguard_llm/models/linear_probe/model_linear.pt"
       device: "cuda"
       target_layer_name: model.layers.27.mlp.act_fn
       threshold: 0.53
@@ -31,19 +31,19 @@ internal_detectors:
 
 output_detectors:
   - name: "SimpleDetector1_input"
-    class_path: "src.detectors.simple_detector.SimpleDetector"
+    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
     args: null
     
   - name: "SimpleDetector2_input"
-    class_path: "src.detectors.simple_detector.SimpleDetector"
+    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
     args: null
 
   - name: "SimpleDetector3_input"
-    class_path: "src.detectors.simple_detector.SimpleDetector"
+    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
     args: null
 
   - name: "SimpleBERT1_output"
-    class_path: "src.detectors.bert_detector.BERTdetector"
+    class_path: "safeguard_llm.detectors.bert_detector.BERTdetector"
     args:
       model_path: "google-bert/bert-base-uncased"
       device: "cuda"

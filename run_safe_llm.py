@@ -110,7 +110,7 @@ def evaluate_safety_results(results) -> dict[str, any]:
 # API entry point execution
 def safe_LLM_eval(inputs: list[str]):
     safe_model = SafeLLM(
-        model, tokenizer, config_path=r"src/config/safe_llm_config.yaml"
+        model, tokenizer, config_path=r"src/safeguard_llm/config/safe_llm_config.yaml"
     )
     results = safe_model.generate(inputs)
     for res in results:
