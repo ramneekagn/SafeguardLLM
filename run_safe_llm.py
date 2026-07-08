@@ -17,7 +17,7 @@ def run_safe_llm(dataset_size):
         model, tokenizer, max_gen_len=64, config_path=r"src/config/safe_llm_config.yaml"
     )
     provider = DatasetProvider(dataset_name = "allenai/wildjailbreak", source = "hf")
-    ds = provider.get_dataset(split="eval", seed=40, size=size)
+    ds = provider.get_dataset(split="eval", seed=40, size=dataset_size)
     dataloader = DataLoader(ds, batch_size=16)
     all_labels = []
     for batch in tqdm(dataloader): 
