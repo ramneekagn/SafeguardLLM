@@ -18,7 +18,7 @@ class GenerationSafetyResult:
 
 
 class SafeLLM(): 
-    def __init__(self, model, tokenizer, config_path: Path):
+    def __init__(self, model, tokenizer, max_gen_len, config_path: Path):
         config = load_safety_config(config_path)
         self.input_detectors: list[tuple[Detector, str]] = config["input_detectors"]  
         self.internal_detectors: list[tuple[InternalDetector, str]] = config["internal_detectors"] 
@@ -27,11 +27,14 @@ class SafeLLM():
         self.forward_hooks = []
         self.model = model
         self.tokenizer = tokenizer
+        self.max_gen_len = max_gen_len
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
         self.tokenizer.padding_side = "left"
-        
+        if self.internal_detectors:
+            self.apply_internal_detectors(self.internal_detectors)
+
     def apply_io_detectors(self, elements: list[str], detectors: list[tuple[Detector, str]]) -> list[dict[str, bool]]:
         input_approvals = [{} for _ in elements]
         for detector_instance, detector_name in detectors:
@@ -56,15 +59,15 @@ class SafeLLM():
     def remove_internal_detectors(self) -> None:
         for fwd_hook in self.forward_hooks: 
             fwd_hook.remove()
-
+        self.forward_hooks.clear()  
     def _generate(self,inputs: list[str]) -> tuple[list[str],list[dict[str, bool]]]:
         internal_approvals = [{} for _ in inputs]
         for internal_detector, _ in self.internal_detectors:
             internal_detector.approvals = []
         tokenized = self.tokenizer(inputs, return_tensors ="pt", padding=True, truncation=True).to(self.model.device)
         input_len = tokenized["input_ids"].shape[1]
-
-        outputs = self.model.generate(**tokenized)
+        #TODO pass generation args 
+        outputs = self.model.generate(**tokenized, max_new_tokens = self.max_gen_len)
         outputs = outputs[:,input_len:]
         #read from hooks 
         for internal_detector, detector_name in self.internal_detectors:
@@ -88,11 +91,7 @@ class SafeLLM():
                 internal_detector.reset()
         if self.input_detectors:
             input_approvals = self.apply_io_detectors(inputs,detectors = self.input_detectors) 
-        if self.internal_detectors:
-            self.apply_internal_detectors(self.internal_detectors) 
-
         outputs, internal_approvals = self._generate(inputs)
-        self.remove_internal_detectors()
         if self.output_detectors:
             output_approvals = self.apply_io_detectors(outputs,detectors = self.output_detectors) 
         for i, input in enumerate(inputs): 

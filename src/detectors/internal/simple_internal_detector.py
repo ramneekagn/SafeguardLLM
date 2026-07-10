@@ -9,8 +9,6 @@ class SimpleInternalDetector(InternalDetector):
         self.activation_cache: list[Tensor] = []
         self.pos = 0
         self.threshold = 0
-        if torch.cuda.is_available():
-            torch.set_default_device('cuda:0') 
     # the hook gets the entire batch 
     def hook(self, module, input: Tensor, output:Tensor) -> None: 
         self.activation_cache.append(output[:,-1,:].detach().clone()) 

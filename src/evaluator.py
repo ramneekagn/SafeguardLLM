@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
-from src.llm_safety_harness import GenerationSafetyResult
+from safety_harness import GenerationSafetyResult
 from sklearn.metrics import (
     confusion_matrix,
     classification_report,
