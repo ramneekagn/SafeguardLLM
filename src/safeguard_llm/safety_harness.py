@@ -66,7 +66,6 @@ class SafeLLM():
             internal_detector.disapprovals = []
         tokenized = self.tokenizer(inputs, return_tensors ="pt", padding=True, truncation=True).to(self.model.device)
         input_len = tokenized["input_ids"].shape[1]
-        #TODO pass generation args 
         outputs = self.model.generate(**tokenized, max_new_tokens = self.max_gen_len)
         outputs = outputs[:,input_len:]
         #read from hooks 

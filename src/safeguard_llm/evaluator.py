@@ -99,18 +99,19 @@ class SafetyEvaluator:
         """Aggregate function to generate all unique values for the given key.
 
         Arguments:
-            metric_func (Callable): The basix function that gets a specified value.
+            metric_func (Callable): The basic function that gets a specified value.
 
         Returns:
             A dict with of dictionaries, whereas each inner dictionary represents a detector with its metrics.
         """
         metrics = defaultdict(dict)
+        #each unique detector only needs to be iterated over once since metric_func calculates for entire dataset
         for detector_type, detector_names in self._get_detector_names().items():
             for detector_name in detector_names:
                 metrics[detector_type][detector_name] = metric_func(detector_type, detector_name)
         return metrics
+
     def get_confusion_matrix(
-            
         self, detector_type: str, detector_name: str
     ) -> np.ndarray:
         """Generates a single confusion matrix for a specified detector.
