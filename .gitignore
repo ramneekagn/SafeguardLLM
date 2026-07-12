@@ -1,1 +1,4 @@
+__pychache__/
+*.pyd
+*.pyo
 *.pyc
