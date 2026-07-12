@@ -1,6 +1,6 @@
-# SafeguardLLM
+# LLM Safety Harness
 Introduction
-A safety harness is defined as a software scaffold around an LLM. Unlike agent harnesses, where the scaffolds are RAGs or connections to tool calls, our method connects LLMs to various detectors. We use BERT classifiers to detect input and output text, while simultaneously auditing the models' internals using linear probes.
+A harness is defined as a software scaffold around an LLM. Unlike agent harnesses, where the scaffolds are RAGs or connections to tool calls, our method connects LLMs to various detectors. We use BERT classifiers to detect input and output text, while simultaneously auditing the models' internals using linear probes.
 We evaluated the models using the following metrics: F1 score, accuracy and latency, comparing different combinations of detectors. 
 The final decision on whether an input or generation is flagged as a jailbreak is made by combining the majority vote from all the classifiers. 
 
