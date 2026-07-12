@@ -4,7 +4,7 @@ A harness is defined as a software scaffold around an LLM. Unlike agent harnesse
 We evaluated the models using the following metrics: F1 score, accuracy and latency, comparing different combinations of detectors. 
 The final decision on whether an input or generation is flagged as a jailbreak is made by combining the majority vote from all the classifiers. 
 
-View [Report] for more detail. 
+View [Report](https://github.com/ramneekagn/SafeguardLLM/tree/report) for more detail. 
 
 <img width="708" height="203" alt="image" src="https://github.com/user-attachments/assets/25d6fe62-6b5a-42b1-9b12-183c888210f7" />
 
