@@ -1,5 +1,9 @@
 # SafeguardLLM
-Goal: build safeguard system around an LLM, where the Input, Internals and Outputs of the system are audited. 
+Introduction
+A safety harness is defined as a software scaffold around an LLM. Unlike agent harnesses, where the scaffolds are RAGs or connections to tool calls, our method connects LLMs to various detectors. We use BERT classifiers to detect input and output text, while simultaneously auditing the models' internals using linear probes.
+We evaluated the models using the following metrics: F1 score, accuracy and latency, comparing different combinations of detectors. 
+The final decision on whether an input or generation is flagged as a jailbreak is made by combining the majority vote from all the classifiers. 
+
 <img width="708" height="203" alt="image" src="https://github.com/user-attachments/assets/25d6fe62-6b5a-42b1-9b12-183c888210f7" />
 
 # Installation
