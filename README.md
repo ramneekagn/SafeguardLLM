@@ -1,5 +1,6 @@
 # SafeguardLLM
 Goal: build safeguard system around an LLM, where the Input, Internals and Outputs of the system are audited. 
+<img width="708" height="203" alt="image" src="https://github.com/user-attachments/assets/25d6fe62-6b5a-42b1-9b12-183c888210f7" />
 
 # Installation
 
