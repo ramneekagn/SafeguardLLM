@@ -35,6 +35,7 @@ class LinearProbeDetector(InternalDetector):
     def is_unsafe(self) -> list[bool]: 
         predictions_full_gen = np.array(self.predictions_gen)
         batch_predictions = np.max(predictions_full_gen, axis=0)
+        batch_predictions = batch_predictions.astype(bool)
         return batch_predictions.tolist()
 
             

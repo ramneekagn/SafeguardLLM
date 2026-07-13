@@ -5,7 +5,7 @@ from safeguard_llm.detectors.detector import Detector
 from safeguard_llm.detectors.internal.internal_detector import InternalDetector
 from pathlib import Path 
 from safeguard_llm.utils.load_config import load_safety_config
-from safeguard_llm.utils.classification_rules import classify_any_rule
+from safeguard_llm.utils.classification_rules import classify_any_or_rule
 #for one prompt, we want to allow multiple safety mechanisms 
 @dataclass
 class GenerationSafetyResult:
@@ -20,7 +20,7 @@ class GenerationSafetyResult:
 
 class SafeLLM(): 
     #default to any rule
-    def __init__(self, model, tokenizer, max_gen_len, config_path: Path, classification_rule:Callable = classify_any_rule):
+    def __init__(self, model, tokenizer, max_gen_len, config_path: Path, classification_rule:Callable = classify_any_or_rule):
         config = load_safety_config(config_path)
         self.input_detectors: list[tuple[Detector, str]] = config["input_detectors"]  
         self.internal_detectors: list[tuple[InternalDetector, str]] = config["internal_detectors"] 
