@@ -1,27 +1,20 @@
 _defaults:
   device: &device "cuda"
-safety_config:
-  early_stopping: true
 
 input_detectors:
-  - name: "SimpleDetector1_input"
-    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
-    args: null
-    
-  - name: "SimpleDetector43_input"
-    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
-    args: null
-
-  - name: "SimpleDetector3_input"
-    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
-    args: null
+  - name: "JackhaoBertJBClassifier"
+    class_path: "safeguard_llm.detectors.bert_detector.BERTdetector"
+    args: 
+      model_path: "jackhhao/jailbreak-classifier"      
+      device: *device
+      threshold: 0.5
 
 
 internal_detectors: 
   - name: "LPInternalDetector1"
     class_path: "safeguard_llm.detectors.internal.linear_probe_detector.LinearProbeDetector"
     args: 
-      model_path: "src/safeguard_llm/models/linear_probe/model_linear_toxicity_qwen3_1_7b_l27_res_stream.pt"      
+      model_path: "src/safeguard_llm/models/linear_probe/model_linear_jailbreak_qwen3_1_7b_res_layer27_simple_jackhhao_jailbreakclassification.pt"      
       device: *device
       target_layer_name: model.layers.27
       input_eval_only: True
@@ -32,13 +25,6 @@ output_detectors:
     class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
     args: null
     
-  - name: "SimpleDetector2_input"
-    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
-    args: null
-
-  - name: "SimpleDetector3_input"
-    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
-    args: null
 
 
 
