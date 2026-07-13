@@ -32,13 +32,22 @@ class SafetyEvaluator:
     def __init__(
         self,
         results: list[GenerationSafetyResult],
-        ground_truths: list[bool],
+        input_truths: list[bool],
+        output_truths: list[bool],
+        truth_rule: Callable = lambda x, y : x or y, # we label both the input and the output of the model, we consider a pair harmful if any are harmful by default 
         detector_types: tuple[str, ...] = (
             "input_disapprovals",
             "internal_disapprovals",
             "output_disapprovals",
         ),
     ):
+        ground_truths = []
+        if len(input_truths) != len(output_truths):
+            raise ValueError(
+                f"Results input_truth {len(input_truths)} and output Truth {len(output_truths)} size does not match."
+            )
+        for i in range(len(input_truths)):
+            ground_truths.append(truth_rule(input_truths[i], output_truths[i]))
         """Initialize the SafetyEvaluator with GenerationSafetyResults and corresponding ground truths"""
         if len(ground_truths) != len(results):
             raise ValueError(
@@ -46,6 +55,7 @@ class SafetyEvaluator:
             )
 
         self.results = results
+        #this can be list of singular labels 
         self.y_true = ground_truths
         self.detector_types = detector_types
 
@@ -83,7 +93,15 @@ class SafetyEvaluator:
 
             values.append(value)
         return values
-
+    
+    def _extract_overall_disapprovals(
+        self,
+    ) -> list[bool | float]:
+        """Extract form list[GenerationSafetyResult]"""
+        values = []
+        for res in self.results:
+            values.append(res.overall_disapproval)
+        return values
 
        
     def _get_detector_names(self) -> dict[str, list[str]]:
@@ -141,7 +159,7 @@ class SafetyEvaluator:
             self.y_true, y_pred, zero_division=np.nan, output_dict=True
         )
 
-    def display_confusion_matrix(self, detector_type: str, detector_name: str) -> None:
+    def display_confusion_matrix(self, cm) -> None:
         """Displays a confusion matrix for the given arguments.
 
         Arguments:
@@ -149,7 +167,6 @@ class SafetyEvaluator:
             detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
 
         """
-        cm = self.get_confusion_matrix(detector_type, detector_name)
         cm_display = ConfusionMatrixDisplay(cm)
         cm_display.plot()
         plt.show()
@@ -183,7 +200,6 @@ class SafetyEvaluator:
         rates["FPR"] = fp / neg  # false alarm
         rates["TNR"] = tn / neg  # selectivity
         rates["Refusal"] = pos_pred / total
-
         return rates
 
     def get_latency(self, detector_type: str, detector_name: str) -> dict[str, float]:
@@ -209,6 +225,10 @@ class SafetyEvaluator:
         latency_metrics["p95"] = np.percentile(latencies, 95)
         return latency_metrics
 
+    def get_ensemble_confusion_matrix(self) -> np.ndarray:
+        y_pred = self._extract_overall_disapprovals()
+        return confusion_matrix(self.y_true, y_pred)
+    
     def get_all_latency_metrics(self) -> dict[str, dict[str, float]]:
         """Generate all latency metrics for each unique detector in the results.
 
@@ -242,6 +262,7 @@ class SafetyEvaluator:
             A dictionary of detector dictionaries with the keys "TPR", "FNR", "FPR", "TNR", "Refusal".
         """
         return self._get_all_metrics(self.get_rate_metrics)
+    
 
     def _print_metrics_in_table(self, metrics: dict) -> None:
         """Print all the given metrics in a table format.
@@ -338,6 +359,6 @@ if __name__ == "__main__":
     with open(yaml_path, "r") as f:
         results = yaml.load(f, Loader=yaml.UnsafeLoader)
 
-    eval = SafetyEvaluator(results, [True, False])
-    metrics = eval.get_all_classification_reports()
-    eval.print_all_classification_reports(metrics)
+    eval = SafetyEvaluator(results, [True, False],[True,False])
+    #metrics = eval.get_all_classification_reports()
+    #eval.print_all_classification_reports(metrics)

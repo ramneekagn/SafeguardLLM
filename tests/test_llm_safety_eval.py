@@ -2,8 +2,8 @@ from pathlib import Path
 
 import yaml
 from typing import Any
-from src.llm_safety_eval import SafetyEvaluator
-from src.llm_safety_harness import GenerationSafetyResult
+from safeguard_llm.llm_safety_eval import SafetyEvaluator
+from safeguard_llm.llm_safety_harness import GenerationSafetyResult
 
 #AI Generated
 def print_evaluator_report(evaluator: SafetyEvaluator) -> None:

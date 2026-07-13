@@ -1,10 +1,11 @@
 import time
-from typing import Any
+from typing import Callable, Any
 from dataclasses import dataclass
 from safeguard_llm.detectors.detector import Detector
 from safeguard_llm.detectors.internal.internal_detector import InternalDetector
 from pathlib import Path 
 from safeguard_llm.utils.load_config import load_safety_config
+from safeguard_llm.utils.classification_rules import classify_any_rule
 #for one prompt, we want to allow multiple safety mechanisms 
 @dataclass
 class GenerationSafetyResult:
@@ -18,7 +19,8 @@ class GenerationSafetyResult:
 
 
 class SafeLLM(): 
-    def __init__(self, model, tokenizer, max_gen_len, config_path: Path):
+    #default to any rule
+    def __init__(self, model, tokenizer, max_gen_len, config_path: Path, classification_rule:Callable = classify_any_rule):
         config = load_safety_config(config_path)
         self.input_detectors: list[tuple[Detector, str]] = config["input_detectors"]  
         self.internal_detectors: list[tuple[InternalDetector, str]] = config["internal_detectors"] 
@@ -28,6 +30,8 @@ class SafeLLM():
         self.model = model
         self.tokenizer = tokenizer
         self.max_gen_len = max_gen_len
+        #set the overall disapproval
+        self.classification_rule = classification_rule
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
@@ -84,21 +88,17 @@ class SafeLLM():
     #allow for batched input
     def generate(self, inputs: list[str]) -> list[GenerationSafetyResult]:
         safety_result_list = []
-        input_disapprovals = [{} for _ in range(len(inputs))]
-        output_disapprovals = [{} for _ in range(len(inputs))]
+        input_disapprovals_batch = [{} for _ in range(len(inputs))]
+        output_disapprovals_batch = [{} for _ in range(len(inputs))]
         for internal_detector, _ in self.internal_detectors:
                 internal_detector.reset()
         if self.input_detectors:
-            input_disapprovals = self.apply_io_detectors(inputs,detectors = self.input_detectors) 
-        outputs, internal_disapprovals = self._generate(inputs)
+            input_disapprovals_batch = self.apply_io_detectors(inputs,detectors = self.input_detectors) 
+        outputs, internal_disapprovals_batch = self._generate(inputs)
         if self.output_detectors:
-            output_disapprovals = self.apply_io_detectors(outputs,detectors = self.output_detectors) 
+            output_disapprovals_batch = self.apply_io_detectors(outputs,detectors = self.output_detectors) 
         for i, input in enumerate(inputs): 
-            overall_disapproval = (
-                all(v["disapproved"] for v in input_disapprovals[i].values()) and 
-                all(v["disapproved"] for v in internal_disapprovals[i].values()) and 
-                all(v["disapproved"] for v in output_disapprovals[i].values())
-            )
-            safety_result_list.append(GenerationSafetyResult(input, outputs[i], input_disapprovals[i], internal_disapprovals[i], output_disapprovals[i], overall_disapproval)) 
+            overall_disapproval = self.classification_rule(input_disapprovals_batch[i].values(),internal_disapprovals_batch[i].values(),output_disapprovals_batch[i].values())
+            safety_result_list.append(GenerationSafetyResult(input, outputs[i], input_disapprovals_batch[i], internal_disapprovals_batch[i], output_disapprovals_batch[i], overall_disapproval)) 
         return safety_result_list
  
