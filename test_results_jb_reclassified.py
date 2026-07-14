@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from safeguard_llm.evaluator import SafetyEvaluator
 from tabulate import tabulate
-
+# AI test
 json_path = Path("results_jb_reclassified.json")
 
 if not json_path.exists():
@@ -15,9 +15,6 @@ with open(json_path, "r", encoding="utf-8") as f:
 
 print(f"Successfully loaded {len(outputs)} records from {json_path.name}.\n")
 
-# ==========================================================
-# 1. EVALUATING INPUT DETECTORS AGAINST PROMPT GOLD LABELS
-# ==========================================================
 print("=" * 60)
 print("EVALUATING INPUT DETECTORS AGAINST PROMPT GOLD LABELS")
 print("=" * 60)
@@ -36,9 +33,6 @@ input_rate_metrics = input_evaluator.get_all_rate_metrics()
 input_evaluator.print_all_rates_metrics(input_rate_metrics)
 
 
-# ==========================================================
-# 2. EVALUATING OUTPUT DETECTORS AGAINST OUTPUT GOLD LABELS
-# ==========================================================
 print("\n" + "=" * 60)
 print("EVALUATING OUTPUT DETECTORS AGAINST OUTPUT GOLD LABELS")
 print("=" * 60)
@@ -57,9 +51,6 @@ output_rate_metrics = output_evaluator.get_all_rate_metrics()
 output_evaluator.print_all_rates_metrics(output_rate_metrics)
 
 
-# ==========================================================
-# 3. EVALUATING LPINTERNALDETECTOR1 AGAINST PROMPT GOLD LABELS
-# ==========================================================
 print("\n" + "=" * 60)
 print("EVALUATING LPINTERNALDETECTOR1 AGAINST PROMPT GOLD LABELS")
 print("=" * 60)
