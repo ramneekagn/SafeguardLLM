@@ -149,35 +149,6 @@ class SafetyEvaluator:
                 metrics[detector_type][detector_name] = metric_func(detector_type, detector_name)
         return metrics
 
-    def get_confusion_matrix(
-        self, detector_type: str, detector_name: str
-    ) -> np.ndarray:
-        """Generates a single confusion matrix for a specified detector.
-
-         Arguments:
-            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
-            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
-
-        Returns:
-            A confusion matrix with the labels in order: TN, FP, FN, TP
-        """
-        y_pred = self._extract_detector_values(detector_type, detector_name, "disapproved")
-        return confusion_matrix(self.y_true, y_pred)
-
-    def get_classification_report(self, detector_type: str, detector_name: str) -> dict:
-        """Generates a single classification report for a specified detector.
-
-         Arguments:
-            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
-            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
-
-        Returns:
-            A dictionary with the precision, recall and f1-score.
-        """
-        y_pred = self._extract_detector_values(detector_type, detector_name, "disapproved")
-        return classification_report(
-            self.y_true, y_pred, zero_division=np.nan, output_dict=True
-        )
     def _calculate_classification_report(self, y_pred: list) -> dict:
         """Calculates classification metrics from raw predictions."""
         return classification_report(
