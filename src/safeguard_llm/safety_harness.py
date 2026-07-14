@@ -64,11 +64,22 @@ class SafeLLM():
         for fwd_hook in self.forward_hooks: 
             fwd_hook.remove()
         self.forward_hooks.clear()  
+        
     def _generate(self,inputs: list[str]) -> tuple[list[str],list[dict[str, bool]]]:
         internal_disapprovals = [{} for _ in inputs]
         for internal_detector, _ in self.internal_detectors:
             internal_detector.disapprovals = []
-        tokenized = self.tokenizer(inputs, return_tensors ="pt", padding=True, truncation=True).to(self.model.device)
+        messages = [
+            [{"role": "user", "content": prompt}]
+            for prompt in inputs
+        ]
+        prompts = self.tokenizer.apply_chat_template(
+            messages, 
+            tokenize=False, 
+            add_generation_prompt=True,
+            enable_thinking=False
+        )
+        tokenized = self.tokenizer(prompts, return_tensors ="pt", padding=True, truncation=True).to(self.model.device)
         input_len = tokenized["input_ids"].shape[1]
         outputs = self.model.generate(**tokenized, max_new_tokens = self.max_gen_len)
         outputs = outputs[:,input_len:]

@@ -4,7 +4,7 @@ from safeguard_llm.run_safe_llm import run_safe_llm
 from safeguard_llm.utils.save_results import save_results_as_json
 
 results, labels = run_safe_llm(
-    dataset_name="deepset/prompt-injections", 
+    dataset_name="allenai/wildjailbreak", 
     dataset_size=10, 
     prompt_col="text", 
     label_col="label", 

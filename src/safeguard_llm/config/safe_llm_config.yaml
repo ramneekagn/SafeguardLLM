@@ -2,10 +2,10 @@ _defaults:
   device: &device "cuda"
 
 input_detectors:
-  - name: "JackhaoBertJBClassifier"
-    class_path: "safeguard_llm.detectors.bert_detector.BERTdetector"
+  - name: "InputRobertaJBDetector"
+    class_path: safeguard_llm.detectors.bert_detector.BERTdetector
     args: 
-      model_path: "jackhhao/jailbreak-classifier"      
+      model_path: "roberta-input-classifier-jb/checkpoint-8120"    
       device: *device
       threshold: 0.5
 
@@ -19,12 +19,22 @@ internal_detectors:
       target_layer_name: model.layers.27
       input_eval_only: True
       threshold: 0.5
+  - name: "LPInternalDetectorConditonal"
+    class_path: "safeguard_llm.detectors.internal.linear_probe_detector.LinearProbeDetector"
+    args: 
+      model_path: "src/safeguard_llm/models/linear_probe/model_linear_jailbreak_qwen3_1_7b_layer27_10k_conditonal.pt"      
+      device: *device
+      target_layer_name: model.layers.27.mlp.act_fn
+      input_eval_only: True
+      threshold: 0.5
 
 output_detectors:
-  - name: "SimpleDetector1_input"
-    class_path: "safeguard_llm.detectors.simple_detector.SimpleDetector"
-    args: null
-    
+  - name: "OutputRobertaJBDetector"
+    class_path: safeguard_llm.detectors.bert_detector.BERTdetector
+    args: 
+      model_path: "roberta_harm_aug/checkpoint-12297"    
+      device: *device
+      threshold: 0.5
 
 
 

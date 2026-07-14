@@ -7,10 +7,10 @@ from importlib import resources
 import os
 
 
-def run_safe_llm(dataset_name, dataset_size, prompt_col, label_col,subset=None):
+def run_safe_llm(dataset_name, dataset_size, prompt_col, label_col,split, subset=None):
 
     provider = DatasetProvider(dataset_name, source = "hf")
-    ds = provider.get_dataset(split="default", seed=40, subset=subset, size=dataset_size)
+    ds = provider.get_dataset(split=split, seed=40, subset=subset, size=dataset_size)
     dataloader = DataLoader(ds, batch_size=1)
     outputs = []
     model = AutoModelForCausalLM.from_pretrained(
