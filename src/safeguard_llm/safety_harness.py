@@ -1,6 +1,7 @@
 import time
-from typing import Callable, Any
-from dataclasses import dataclass
+from typing import Callable, Any, Optional
+import uuid
+from dataclasses import dataclass, field
 from safeguard_llm.detectors.detector import Detector
 from safeguard_llm.detectors.internal.internal_detector import InternalDetector
 from pathlib import Path 
@@ -10,12 +11,16 @@ from safeguard_llm.utils.classification_rules import classify_any_or_rule
 @dataclass
 class GenerationSafetyResult:
     prompt: str 
-    output: str 
+    output: str
     # map detector_name -> {"class_name": str, "approved": bool}
     input_disapprovals: dict[str, dict[str, Any]]
     internal_disapprovals: dict[str, dict[str, Any]]
     output_disapprovals: dict[str, dict[str, Any]]
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     overall_disapproval: bool = True
+    prompt_label_gold: Optional[int] = None
+    output_label_gold: Optional[int] = None  
+
 
 
 class SafeLLM(): 
@@ -70,7 +75,7 @@ class SafeLLM():
         for internal_detector, _ in self.internal_detectors:
             internal_detector.disapprovals = []
         messages = [
-            [{"role": "user", "content": prompt}]
+            [{"role": "system", "content": "stay concise"}, {"role": "user", "content": prompt}]
             for prompt in inputs
         ]
         prompts = self.tokenizer.apply_chat_template(
@@ -110,6 +115,13 @@ class SafeLLM():
             output_disapprovals_batch = self.apply_io_detectors(outputs,detectors = self.output_detectors) 
         for i, input in enumerate(inputs): 
             overall_disapproval = self.classification_rule(input_disapprovals_batch[i].values(),internal_disapprovals_batch[i].values(),output_disapprovals_batch[i].values())
-            safety_result_list.append(GenerationSafetyResult(input, outputs[i], input_disapprovals_batch[i], internal_disapprovals_batch[i], output_disapprovals_batch[i], overall_disapproval)) 
+            safety_result_list.append(GenerationSafetyResult(
+                prompt=input, 
+                output=outputs[i], 
+                input_disapprovals=input_disapprovals_batch[i], 
+                internal_disapprovals=internal_disapprovals_batch[i], 
+                output_disapprovals=output_disapprovals_batch[i], 
+                overall_disapproval=overall_disapproval
+            )) 
         return safety_result_list
  

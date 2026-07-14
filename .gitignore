@@ -3,3 +3,4 @@ bert_models/
 *.pyd
 *.pyo
 *.pyc
+*.env

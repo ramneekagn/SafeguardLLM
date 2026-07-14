@@ -1,11 +1,14 @@
 from collections import defaultdict
+from dataclasses import dataclass, field, is_dataclass, asdict
 from pathlib import Path
-from typing import Callable, Any
+from typing import Callable, Any, Union, Optional
+import uuid
 
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 from tabulate import tabulate
+
 
 from safeguard_llm.safety_harness import GenerationSafetyResult
 from sklearn.metrics import (
@@ -29,39 +32,52 @@ class SafetyEvaluator:
         detector_types (tuple[str, ...]): The detectors that are used in the results. Defaults to ("input_disapprovals", "internal_disapprovals", "output_disapprovals")
     """
     def __init__(
-            self,
-            results: list[GenerationSafetyResult],
-            input_truths: list[bool],
-            output_truths: list[bool] | None = None,
-            truth_rule: Callable = lambda x, y: x or y,  # we label both the input and the output of the model, we consider a pair harmful if any are harmful by default.  
-            detector_types: tuple[str, ...] = (
-                "input_disapprovals",
-                "internal_disapprovals",
-                "output_disapprovals",
-            ),
-        ):
-            """Initialize the SafetyEvaluator with GenerationSafetyResults and corresponding ground truths"""
-            ground_truths = []
-            if output_truths is None:
-                ground_truths = input_truths
+        self,
+        results: list[Union[dict, Any]],
+        truth_rule: Callable = lambda x, y: x or y,  
+        detector_types: tuple[str, ...] = (
+            "input_disapprovals",
+            "internal_disapprovals",
+            "output_disapprovals",
+        ),
+    ):
+        """Initialize the SafetyEvaluator with list of results (either dicts or dataclasses)."""
+        self.results = []
+        for res in results:
+            if is_dataclass(res):
+                self.results.append(asdict(res))
+            elif isinstance(res, dict):
+                self.results.append(res)
             else:
-                if len(input_truths) != len(output_truths):
-                    raise ValueError(
-                        f"Results input_truth {len(input_truths)} and output Truth {len(output_truths)} size does not match."
-                    )
-                for i in range(len(input_truths)):
-                    ground_truths.append(truth_rule(input_truths[i], output_truths[i]))
+                try:
+                    self.results.append(dict(res))
+                except (ValueError, TypeError):
+                    if hasattr(res, "__dict__"):
+                        self.results.append(res.__dict__)
+                    else:
+                        raise TypeError(f"Unsupported result type: {type(res)}")
 
-            if len(ground_truths) != len(results):
-                raise ValueError(
-                    f"Results Length {len(results)} and Ground Truth Length {len(ground_truths)} does not match."
-                )
+        self.detector_types = detector_types
 
-            self.results = results
-            #this can be list of singular labels 
-            self.y_true = ground_truths
-            self.detector_types = detector_types
+        input_truths = []
+        output_truths = []
+        for res in self.results: 
+            input_truths.append(res.get("prompt_label_gold"))
+            output_truths.append(res.get("output_label_gold"))
 
+        ground_truths = []
+        for i in range(len(input_truths)):
+            in_val = input_truths[i]
+            out_val = output_truths[i]
+            ground_truths.append(truth_rule(in_val, out_val))
+
+        if len(ground_truths) != len(self.results):
+            raise ValueError(
+                f"Results Length {len(self.results)} and Ground Truth Length {len(ground_truths)} do not match."
+            )
+
+        self.y_true = ground_truths
+        
     def _extract_detector_values(
         self,
         detector_type: str,
@@ -82,28 +98,29 @@ class SafetyEvaluator:
         """
         values = []
         for res in self.results:
-            if not hasattr(res, detector_type):
+            # Check against dictionary keys rather than object attributes
+            if detector_type not in res:
                 raise ValueError(
-                    f"'{detector_type}' is not a valid Detector Type.\n Valid are: {self.detector_types}"
+                    f"'{detector_type}' is not a valid Detector Type in this result.\n"
+                    f"Available options: {list(res.keys())}"
                 )
-            disapproval_dict = getattr(res, detector_type, {})
+            disapproval_dict = res.get(detector_type) or {}
             if detector_name not in disapproval_dict:
                 raise ValueError(
                     f"Detector '{detector_name}' not found in '{detector_type}'."
                 )
-            detector_dict = disapproval_dict.get(detector_name, {})
+            detector_dict = disapproval_dict.get(detector_name) or {}
             value = detector_dict.get(value_key)
-
             values.append(value)
         return values
-    
+        
     def _extract_overall_disapprovals(
         self,
     ) -> list[bool | float]:
         """Extract form list[GenerationSafetyResult]"""
         values = []
         for res in self.results:
-            values.append(res.overall_disapproval)
+            values.append(res["overall_disapproval"])
         return values
 
        
@@ -112,7 +129,7 @@ class SafetyEvaluator:
         names: dict[str, set[str]] = {dt: set() for dt in self.detector_types}
         for res in self.results:
             for detector_type in self.detector_types:
-                disapproval_dict = getattr(res, detector_type, {})
+                disapproval_dict = res.get(detector_type, {})
                 names[detector_type].update(disapproval_dict.keys())
         return {dt: sorted(ns) for dt, ns in names.items()}
 

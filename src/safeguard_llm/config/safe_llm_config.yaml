@@ -5,7 +5,7 @@ input_detectors:
   - name: "InputRobertaJBDetector"
     class_path: safeguard_llm.detectors.bert_detector.BERTdetector
     args: 
-      model_path: "roberta-input-classifier-jb/checkpoint-8120"    
+      model_path: "bert_models/roberta-input-classifier-jb/checkpoint-8120"    
       device: *device
       threshold: 0.5
 
@@ -32,7 +32,7 @@ output_detectors:
   - name: "OutputRobertaJBDetector"
     class_path: safeguard_llm.detectors.bert_detector.BERTdetector
     args: 
-      model_path: "roberta_harm_aug/checkpoint-12297"    
+      model_path: "bert_models/roberta_harm_aug/checkpoint-12297"    
       device: *device
       threshold: 0.5
 
