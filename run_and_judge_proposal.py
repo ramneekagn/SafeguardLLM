@@ -59,7 +59,7 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
         # dunno how the dataset looks like, just added prompt exolicitly to catch errors early
         dataset = dataset.map(lambda elm: {
             "prompt": elm["prompt"],
-            "type": 1 if elm["type"] == "jailbreak" else 0})
+            "label": 1 if elm["type"] == "jailbreak" else 0})
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented.")
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     willJudge = True
 
     """
-    dataset_name = "jailbreak-classifcation"
+    dataset_name = "jailbreak-classification"
     output_filename = "results_jb_first_run.json"
     sample_size = 100
     batch_size = 4
