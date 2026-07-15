@@ -14,7 +14,7 @@ internal_detectors:
   - name: "LPInternalDetector1"
     class_path: "safeguard_llm.detectors.internal.linear_probe_detector.LinearProbeDetector"
     args: 
-      model_path: "src/safeguard_llm/models/linear_probe/model_linear_jailbreak_qwen3_1_7b_res_layer27_simple_jackhhao_jailbreakclassification.pt"      
+      model_path: "src/safeguard_llm/models/linear_probe/model_linear_jailbreak_qwen3_1_7b_res_layer27_simple_jackhhao_jailbreakclassification_template.pt"      
       device: *device
       target_layer_name: model.layers.27
       input_eval_only: True

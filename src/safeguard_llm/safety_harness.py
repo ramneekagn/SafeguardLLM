@@ -75,7 +75,7 @@ class SafeLLM():
         for internal_detector, _ in self.internal_detectors:
             internal_detector.disapprovals = []
         messages = [
-            [{"role": "system", "content": "stay concise"}, {"role": "user", "content": prompt}]
+            [{"role": "user", "content": prompt}]
             for prompt in inputs
         ]
         prompts = self.tokenizer.apply_chat_template(
