@@ -70,20 +70,20 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
 
     # === UNBALANCED DATASETS ===
     elif dataset_name == "jailbreakbench-benign":
-        dataset = load_dataset("JailbreakBench/JBB-Behaviors", split="benign")
+        dataset = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="benign")
         sample_size = _check_single_sample_size(sample_size, dataset)
         dataset = dataset.select(range(sample_size))
         dataset = dataset.map(lambda elm: {
-            "prompt": elm["goal"],
+            "prompt": elm["Goal"],
             "label": 0
         })
 
     elif dataset_name == "jailbreakbench-harmful":
-        dataset = load_dataset("JailbreakBench/JBB-Behaviors", split="harmful")
+        dataset = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="harmful")
         sample_size = _check_single_sample_size(sample_size, dataset)
         dataset = dataset.select(range(sample_size))
         dataset = dataset.map(lambda elm: {
-            "prompt": elm["goal"],
+            "prompt": elm["Goal"],
             "label": 1
         })
 
