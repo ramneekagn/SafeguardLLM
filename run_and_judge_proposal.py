@@ -15,13 +15,19 @@ import asyncio
 
 # HANDLE DATASETS
 def _check_sample_size(sample_size: int, ds_true: Dataset, ds_false: Dataset) -> int:
-   """ Checks if sample size will lead to an IndexError and in this case adjusts it with the maximum possible index """
+    """ Checks if sample size will lead to an IndexError and in this case adjusts it with the maximum possible index """
 
     max_safe_sample_size = min(len(ds_true), len(ds_false))
     if sample_size > max_safe_sample_size:
         sample_size = max_safe_sample_size
         print(f"Choosen sample size was too large for the given dataset. Reverting to {max_safe_sample_size}")
     return sample_size
+
+def _prepare_output_file(output_filename: str, dataset_name: str) -> Path:
+    test_file = Path(output_filename)
+    test_file = test_file.with_stem(f"{test_file.stem}_{dataset_name}")
+    return test_file
+
 
 def prepare_dataset(dataset_name: str, sample_size: int = 210):
     """ Returns a Hugging Face dataset with standardized columns: 'prompt' and 'label' """
@@ -71,19 +77,20 @@ def run_and_judge(
         batch_size: int,
         willJudge: bool,
         max_gen_len: int = 256,
-        config_path: Path = Path("src/safeguard_llm/config/safe_llm_config.yaml")
+        config_path: Path = Path("src/safeguard_llm/config/safe_llm_config.yaml"),
+        model_name: str = "Qwen/Qwen3-1.7B"
 ):
+    """ Runs the evaluation pipeline and optionally adds gold labels for the output by a LLM judge """
     # prepare ds
     dataset = prepare_dataset(dataset_name, sample_size=sample_size)
     dataloader = DataLoader(dataset, batch_size=batch_size)
 
     # init model + tokenizer
-    # TODO: model argument ?
     model = AutoModelForCausalLM.from_pretrained(
-        "Qwen/Qwen3-1.7B", device_map="auto"
+        model_name, device_map="auto"
     )
     tokenizer = AutoTokenizer.from_pretrained(
-        "Qwen/Qwen3-1.7B", padding_side="left"
+        model_name, padding_side="left"
     )
 
     safe_model = SafeLLM(
@@ -112,14 +119,14 @@ def run_and_judge(
             res.output_label_gold = False
         res.prompt_label_gold = bool(val)
 
-    test_file = Path(output_filename)
+    test_file = _prepare_output_file(output_filename, dataset_name)
     save_results_as_json(outputs, test_file)
 
+    # llm judge
     if willJudge:
         load_dotenv()
         be = Benchmark_Eval(test_file)
         asyncio.run(be.execute_judgement())
-
 
 # RUN
 
