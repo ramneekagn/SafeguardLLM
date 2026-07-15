@@ -76,7 +76,8 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
         dataset = dataset.map(lambda elm: {
             "prompt": elm["Goal"],
             "label": 0
-        })
+        }, remove_columns=dataset.column_names)
+
 
     elif dataset_name == "jailbreakbench-harmful":
         dataset = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="harmful")
@@ -85,9 +86,10 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
         dataset = dataset.map(lambda elm: {
             "prompt": elm["Goal"],
             "label": 1
-        })
+        }, remove_columns=dataset.column_names)
 
-    elif dataset_name == "xtest-safe":
+
+    elif dataset_name == "xstest-safe":
         dataset = load_dataset("walledai/XSTest", split="test")
         dataset = dataset.filter(lambda elm: elm["label"] == "safe")
         sample_size = _check_single_sample_size(sample_size, dataset)
@@ -95,7 +97,7 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
         dataset = dataset.map(lambda elm: {
             "prompt": elm["prompt"],
             "label": 0
-        })
+        }, remove_columns=dataset.column_names)
 
     elif dataset_name == "xstest-unsafe":
         dataset = load_dataset("walledai/XSTest", split="test")
@@ -105,16 +107,17 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
         dataset = dataset.map(lambda elm: {
             "prompt": elm["prompt"],
             "label": 1
-        })
+        }, remove_columns=dataset.column_names)
 
     elif dataset_name == "coconot":
-        dataset = load_dataset("allenai/coconot", split="contrast")
+        dataset = load_dataset("allenai/coconot", "contrast", split="test")
         sample_size = _check_single_sample_size(sample_size, dataset)
         dataset = dataset.select(range(sample_size))
         dataset = dataset.map(lambda elm: {
             "prompt": elm["prompt"],
             "label": 0
-        })
+        }, remove_columns=dataset.column_names)
+
 
     elif dataset_name == "alpaca":
         dataset = load_dataset("tatsu-lab/alpaca", split="train")
@@ -123,7 +126,8 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
         dataset = dataset.map(lambda elm: {
             "prompt": elm["instruction"],
             "label": 0
-        })
+        }, remove_columns=dataset.column_names)
+
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented.")
 
