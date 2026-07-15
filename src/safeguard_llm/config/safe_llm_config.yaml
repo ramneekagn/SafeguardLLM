@@ -8,7 +8,7 @@ input_detectors:
       model_path: "bert_models/roberta-input-classifier-jb/checkpoint-8120"    
       device: *device
       threshold: 0.5
-
+      label_pos: 1
 
 internal_detectors: 
   - name: "LPInternalDetector1"
@@ -35,6 +35,7 @@ output_detectors:
       model_path: "bert_models/roberta_harm_aug/checkpoint-12297"    
       device: *device
       threshold: 0.5
+      label_pos: 1
 
 
 
