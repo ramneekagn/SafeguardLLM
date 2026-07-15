@@ -20,6 +20,12 @@ def _check_sample_size(sample_size: int, ds_true: Dataset, ds_false: Dataset) ->
         print(f"Choosen sample size was too large for the given dataset. Reverting to {max_safe_sample_size}")
     return sample_size
 
+def _check_single_sample_size(sample_size: int, ds: Dataset):
+    if sample_size > len(ds):
+        sample_size = len(ds)
+        print(f"Choosen sample size was too large for the given dataset. Reverting to {sample_size}")
+    return sample_size
+
 def _prepare_output_file(output_filename: str, dataset_name: str) -> Path:
     test_file = Path(output_filename)
     test_file = test_file.with_stem(f"{test_file.stem}_{dataset_name}")
@@ -29,6 +35,7 @@ def _prepare_output_file(output_filename: str, dataset_name: str) -> Path:
 def prepare_dataset(dataset_name: str, sample_size: int = 210):
     """ Returns a Hugging Face dataset with standardized columns: 'prompt' and 'label' """
 
+    # === BALANCED DATASETS ===
     if dataset_name == "wildjailbreak":
         dataset = load_dataset("allenai/wildjailbreak", "eval", delimiter="\t", keep_default_na=False)
         ds_true = dataset["train"].filter(lambda elm: elm["label"] == 1)
@@ -60,6 +67,63 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
         dataset = dataset.map(lambda elm: {
             "prompt": elm["prompt"],
             "label": 1 if elm["type"] == "jailbreak" else 0})
+
+    # === UNBALANCED DATASETS ===
+    elif dataset_name == "jailbreakbench-benign":
+        dataset = load_dataset("JailbreakBench/JailbreakBench", split="benign")
+        sample_size = _check_single_sample_size(sample_size, dataset)
+        dataset = dataset.select(range(sample_size))
+        dataset = dataset.map(lambda elm: {
+            "prompt": elm["goal"],
+            "label": 0
+        })
+
+    elif dataset_name == "jailbreakbench-harmful":
+        dataset = load_dataset("JailbreakBench/JailbreakBench", split="harmful")
+        sample_size = _check_single_sample_size(sample_size, dataset)
+        dataset = dataset.select(range(sample_size))
+        dataset = dataset.map(lambda elm: {
+            "prompt": elm["goal"],
+            "label": 1
+        })
+
+    elif dataset_name == "xtest-safe":
+        dataset = load_dataset("walledai/XSTest", split="test")
+        dataset = dataset.filter(lambda elm: elm["label"] == "safe")
+        sample_size = _check_single_sample_size(sample_size, dataset)
+        dataset = dataset.select(range(sample_size))
+        dataset = dataset.map(lambda elm: {
+            "prompt": elm["prompt"],
+            "label": 0
+        })
+
+    elif dataset_name == "xstest-unsafe":
+        dataset = load_dataset("walledai/XSTest", split="test")
+        dataset = dataset.filter(lambda elm: elm["label"] == "unsafe")
+        sample_size = _check_single_sample_size(sample_size, dataset)
+        dataset = dataset.select(range(sample_size))
+        dataset = dataset.map(lambda elm: {
+            "prompt": elm["prompt"],
+            "label": 1
+        })
+
+    elif dataset_name == "coconot":
+        dataset = load_dataset("allenai/coconot", split="contrast")
+        sample_size = _check_single_sample_size(sample_size, dataset)
+        dataset = dataset.select(range(sample_size))
+        dataset = dataset.map(lambda elm: {
+            "prompt": elm["prompt"],
+            "label": 0
+        })
+
+    elif dataset_name == "alpaca":
+        dataset = load_dataset("tatsu-lab/alpaca", split="train")
+        sample_size = _check_single_sample_size(sample_size, dataset)
+        dataset = dataset.select(range(sample_size))
+        dataset = dataset.map(lambda elm: {
+            "prompt": elm["instruction"],
+            "label": 0
+        })
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented.")
 
@@ -121,13 +185,13 @@ def run_and_judge(
 
     # llm judge
     if willJudge:
-        load_dotenv()
         be = Benchmark_Eval(test_file)
         asyncio.run(be.execute_judgement())
 
 # RUN
 
 if __name__ == "__main__":
+    load_dotenv()
 
     # === CONFIG ===
     dataset_name = "wildjailbreak"
