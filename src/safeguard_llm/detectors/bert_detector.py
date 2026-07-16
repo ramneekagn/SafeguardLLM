@@ -20,6 +20,7 @@ class BERTdetector(Detector):
     def __init__(self, model_path: Path, device: str, threshold: float = 0.5, label_pos: int = 0):
         super().__init__()
         self.threshold = threshold
+        print("Bert: ", self.threshold)
         self.label_pos = label_pos
         self.device = torch.device(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -48,10 +49,11 @@ class BERTdetector(Detector):
             outputs = self.model(**input)
         probs = torch.softmax(outputs.logits, dim=-1)
         target_label_probs = probs[:, self.label_pos]
+        
+        # Diagnostic print statement
+        print(f"Raw probabilities: {target_label_probs.tolist()[:10]}")
+        
         return (target_label_probs > self.threshold).tolist()
-
-
-
 
 
 

@@ -7,7 +7,7 @@ input_detectors:
     args: 
       model_path: "bert_models/roberta-input-classifier-jb/checkpoint-8120"    
       device: *device
-      threshold: 0.5
+      threshold: 0.95
       label_pos: 1
 
 internal_detectors: 
@@ -18,7 +18,7 @@ internal_detectors:
       device: *device
       target_layer_name: model.layers.27
       input_eval_only: True
-      threshold: 0.5
+      threshold: 0.95
   - name: "LPInternalDetectorConditonal"
     class_path: "safeguard_llm.detectors.internal.linear_probe_detector.LinearProbeDetector"
     args: 

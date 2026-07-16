@@ -12,6 +12,7 @@ class LinearProbeDetector(InternalDetector):
         self.model_path = model_path
         self.device = device
         self.threshold = threshold
+        print("LP: ", self.threshold)
         self.input_eval_only = input_eval_only
         self.eval_flag = True
         self.predictions_gen = []

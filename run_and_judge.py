@@ -54,6 +54,20 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
             "prompt": elm["adversarial"],
             "label": elm["label"]
         })
+    if dataset_name == "wildjailbreak-vanilla":
+            dataset = load_dataset("allenai/wildjailbreak", "train", delimiter="\t", keep_default_na=False)
+            ds_true = dataset["train"].filter(lambda elm: elm["data_type"] == "vanilla_harmful")
+            ds_false = dataset["train"].filter(lambda elm: elm["data_type"] == "vanilla_benign")
+
+            sample_size = _check_sample_size(sample_size, ds_true, ds_false)
+            ds_true = ds_true.select(range(sample_size))
+            ds_false = ds_false.select(range(sample_size))
+            dataset = concatenate_datasets([ds_true, ds_false])
+
+            dataset = dataset.map(lambda elm: {
+                "prompt": elm["vanilla"],
+                "label": 1 if elm["data_type"] == "vanilla_harmful" else 0
+            })
 
     elif dataset_name == "preliminary_dataset": 
             ds_true = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="harmful")
@@ -175,6 +189,7 @@ def run_and_judge(
 ):
     """ Runs the evaluation pipeline and optionally adds gold labels for the output by a LLM judge """
     # prepare ds
+    print(f"Running {dataset_name}")
     dataset = prepare_dataset(dataset_name, sample_size=sample_size)
     dataloader = DataLoader(dataset, batch_size=batch_size)
 
@@ -217,46 +232,6 @@ def run_and_judge(
 
     # llm judge
     if willJudge:
+        print(f"Judging {dataset_name}")
         be = Benchmark_Eval(test_file)
         asyncio.run(be.execute_judgement())
-
-def run_evalulation(results_dir): 
-    json_path = Path(results_dir)
-    with open(json_path, "r", encoding="utf-8") as f:
-        results = json.load(f)
-    evaluator = SafetyEvaluator(results, truth_rule= lambda x,y: x )
-
-    input_class_metrics = evaluator.get_rate_metrics("input_disapprovals", "InputRobertaJBDetector")
-    print(input_class_metrics)
-    internal_class_metrics = evaluator.get_rate_metrics("internal_disapprovals", "LPInternalDetector1")
-    print(internal_class_metrics )
-    evaluator = SafetyEvaluator(results, truth_rule= lambda x,y: y )
-    output_class_metrics = evaluator.get_rate_metrics("output_disapprovals", "OutputRobertaJBDetector")
-    print(input_class_metrics)
-
-# RUN
-
-load_dotenv()
-
-# === CONFIG ===
-dataset_name = "preliminary_dataset"
-output_filename = "results_jb.json"
-sample_size = 100
-batch_size = 8
-willJudge = True
-
-"""
-dataset_name = "jailbreak-classification"
-output_filename = "results_jb_first_run.json"
-sample_size = 100
-batch_size = 4
-willJudge = True
-"""
-
-run_and_judge(
-    dataset_name = dataset_name,
-    output_filename = output_filename,
-    sample_size = sample_size,
-    batch_size = batch_size,
-    willJudge = willJudge
-)
