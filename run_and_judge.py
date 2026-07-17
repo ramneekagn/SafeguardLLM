@@ -281,10 +281,41 @@ def prepare_dataset(dataset_name: str, sample_size: int = 210):
 
         dataset = concatenate_datasets([dataset_benign, dataset_harmful])
 
-    # def _load_dataset_helper(path: str, sample_size = 100, name: str = "", split: str | None = None)
-
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented.")
+
+    return dataset
+
+# still ugly, how to handle xstest case ? maybe better split loading and mapping ?
+def _load_dataset_helper(path: str, name: str | None = None, split: str | None = None, sample_size=1):
+    # load dataset
+    if name:
+        dataset = load_dataset(path, name, split=split, keep_default_na=False)
+    else:
+        dataset = load_dataset(path, split=split, keep_default_na=False)
+    # special filter for dataset
+    if path == "allenai/WildChat-nontoxic":
+        dataset = dataset.filter(lambda entry: entry["language"] == "English")
+    dataset = dataset.shuffle(seed=SEED)
+    sample_size = _check_single_sample_size(sample_size, dataset)
+    dataset = dataset.select(range(sample_size))
+    # mapping for given dataset
+    if path == "allenai/WildChat-nontoxic":
+        dataset = dataset.map(lambda elm: {
+            "prompt": elm["conversation"][0]["content"],
+            "label": 1
+        }, remove_columns=dataset.column_names)
+    elif path == "JailbreakBench/JBB-Behaviors":
+        if split == "harmful":
+            dataset = dataset.map(lambda elm: {
+                "prompt": elm["Goal"],
+                "label": 1
+            }, remove_columns=dataset.column_names)
+        elif split == "benign":
+            dataset = dataset.map(lambda elm: {
+                "prompt": elm["Goal"],
+                "label": 0
+            }, remove_columns=dataset.column_names)
 
     return dataset
 
