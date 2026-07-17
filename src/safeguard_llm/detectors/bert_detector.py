@@ -20,6 +20,7 @@ class BERTdetector(Detector):
     def __init__(self, model_path: Path, device: str, threshold: float = 0.5, label_pos: int = 0):
         super().__init__()
         self.threshold = threshold
+        print("Bert: ", self.threshold)
         self.label_pos = label_pos
         self.device = torch.device(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -46,14 +47,10 @@ class BERTdetector(Detector):
 
         with torch.no_grad():
             outputs = self.model(**input)
-        # we assume here a multilabel model and only check for the first label of the model
-        probs = torch.sigmoid(outputs.logits)
-        first_label_probs = probs[:, self.label_pos]
-        return (first_label_probs > self.threshold).tolist()
-
-
-
-
+        probs = torch.softmax(outputs.logits, dim=-1)
+        target_label_probs = probs[:, self.label_pos]
+        
+        return (target_label_probs > self.threshold).tolist()
 
 
 

@@ -1,24 +1,31 @@
 import time
-from typing import Any
-from dataclasses import dataclass
+from typing import Callable, Any, Optional
+import uuid
+from dataclasses import dataclass, field
 from safeguard_llm.detectors.detector import Detector
 from safeguard_llm.detectors.internal.internal_detector import InternalDetector
 from pathlib import Path 
 from safeguard_llm.utils.load_config import load_safety_config
+from safeguard_llm.utils.classification_rules import classify_any_or_rule
 #for one prompt, we want to allow multiple safety mechanisms 
 @dataclass
 class GenerationSafetyResult:
     prompt: str 
-    output: str 
+    output: str
     # map detector_name -> {"class_name": str, "approved": bool}
     input_disapprovals: dict[str, dict[str, Any]]
     internal_disapprovals: dict[str, dict[str, Any]]
     output_disapprovals: dict[str, dict[str, Any]]
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     overall_disapproval: bool = True
+    prompt_label_gold: Optional[int] = None
+    output_label_gold: Optional[int] = None  
+
 
 
 class SafeLLM(): 
-    def __init__(self, model, tokenizer, max_gen_len, config_path: Path):
+    #default to any rule
+    def __init__(self, model, tokenizer, max_gen_len, config_path: Path, classification_rule:Callable = classify_any_or_rule):
         config = load_safety_config(config_path)
         self.input_detectors: list[tuple[Detector, str]] = config["input_detectors"]  
         self.internal_detectors: list[tuple[InternalDetector, str]] = config["internal_detectors"] 
@@ -28,6 +35,8 @@ class SafeLLM():
         self.model = model
         self.tokenizer = tokenizer
         self.max_gen_len = max_gen_len
+        #set the overall disapproval
+        self.classification_rule = classification_rule
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
@@ -60,11 +69,22 @@ class SafeLLM():
         for fwd_hook in self.forward_hooks: 
             fwd_hook.remove()
         self.forward_hooks.clear()  
+        
     def _generate(self,inputs: list[str]) -> tuple[list[str],list[dict[str, bool]]]:
         internal_disapprovals = [{} for _ in inputs]
         for internal_detector, _ in self.internal_detectors:
             internal_detector.disapprovals = []
-        tokenized = self.tokenizer(inputs, return_tensors ="pt", padding=True, truncation=True).to(self.model.device)
+        messages = [
+            [{"role": "user", "content": prompt}]
+            for prompt in inputs
+        ]
+        prompts = self.tokenizer.apply_chat_template(
+            messages, 
+            tokenize=False, 
+            add_generation_prompt=True,
+            enable_thinking=False
+        )
+        tokenized = self.tokenizer(prompts, return_tensors ="pt", padding=True, truncation=True).to(self.model.device)
         input_len = tokenized["input_ids"].shape[1]
         outputs = self.model.generate(**tokenized, max_new_tokens = self.max_gen_len)
         outputs = outputs[:,input_len:]
@@ -84,21 +104,24 @@ class SafeLLM():
     #allow for batched input
     def generate(self, inputs: list[str]) -> list[GenerationSafetyResult]:
         safety_result_list = []
-        input_disapprovals = [{} for _ in range(len(inputs))]
-        output_disapprovals = [{} for _ in range(len(inputs))]
+        input_disapprovals_batch = [{} for _ in range(len(inputs))]
+        output_disapprovals_batch = [{} for _ in range(len(inputs))]
         for internal_detector, _ in self.internal_detectors:
                 internal_detector.reset()
         if self.input_detectors:
-            input_disapprovals = self.apply_io_detectors(inputs,detectors = self.input_detectors) 
-        outputs, internal_disapprovals = self._generate(inputs)
+            input_disapprovals_batch = self.apply_io_detectors(inputs,detectors = self.input_detectors) 
+        outputs, internal_disapprovals_batch = self._generate(inputs)
         if self.output_detectors:
-            output_disapprovals = self.apply_io_detectors(outputs,detectors = self.output_detectors) 
+            output_disapprovals_batch = self.apply_io_detectors(outputs,detectors = self.output_detectors) 
         for i, input in enumerate(inputs): 
-            overall_disapproval = (
-                all(v["disapproved"] for v in input_disapprovals[i].values()) and 
-                all(v["disapproved"] for v in internal_disapprovals[i].values()) and 
-                all(v["disapproved"] for v in output_disapprovals[i].values())
-            )
-            safety_result_list.append(GenerationSafetyResult(input, outputs[i], input_disapprovals[i], internal_disapprovals[i], output_disapprovals[i], overall_disapproval)) 
+            overall_disapproval = self.classification_rule(input_disapprovals_batch[i].values(),internal_disapprovals_batch[i].values(),output_disapprovals_batch[i].values())
+            safety_result_list.append(GenerationSafetyResult(
+                prompt=input, 
+                output=outputs[i], 
+                input_disapprovals=input_disapprovals_batch[i], 
+                internal_disapprovals=internal_disapprovals_batch[i], 
+                output_disapprovals=output_disapprovals_batch[i], 
+                overall_disapproval=overall_disapproval
+            )) 
         return safety_result_list
  

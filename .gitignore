@@ -1,4 +1,6 @@
-__pychache__/
+__pycache__/
+bert_models/
 *.pyd
 *.pyo
 *.pyc
+*.env

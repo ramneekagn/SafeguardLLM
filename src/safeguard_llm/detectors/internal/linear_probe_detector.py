@@ -12,6 +12,7 @@ class LinearProbeDetector(InternalDetector):
         self.model_path = model_path
         self.device = device
         self.threshold = threshold
+        print("LP: ", self.threshold)
         self.input_eval_only = input_eval_only
         self.eval_flag = True
         self.predictions_gen = []
@@ -35,6 +36,7 @@ class LinearProbeDetector(InternalDetector):
     def is_unsafe(self) -> list[bool]: 
         predictions_full_gen = np.array(self.predictions_gen)
         batch_predictions = np.max(predictions_full_gen, axis=0)
+        batch_predictions = batch_predictions.astype(bool)
         return batch_predictions.tolist()
 
             

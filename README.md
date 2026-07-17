@@ -13,6 +13,7 @@ View [Report](https://github.com/ramneekagn/SafeguardLLM/blob/report/report/repo
 ## 1. Navigate to the repository directory
 
 ```cd path/to/SafeGuardLLM```
+ 
 
 ## 2. Create a virtual environment
 
@@ -29,3 +30,6 @@ venv\scritps\activate
 ## 3. Install the necessary requirements
 
 ```pip install -r requirements.txt```
+
+## 4. Install as package
+  pip install -e .

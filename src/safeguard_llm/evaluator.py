@@ -1,11 +1,14 @@
 from collections import defaultdict
+from dataclasses import dataclass, field, is_dataclass, asdict
 from pathlib import Path
-from typing import Callable, Any
+from typing import Callable, Any, Union, Optional
+import uuid
 
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 from tabulate import tabulate
+
 
 from safeguard_llm.safety_harness import GenerationSafetyResult
 from sklearn.metrics import (
@@ -28,27 +31,53 @@ class SafetyEvaluator:
         ground_truths (list[bool]): The correct labels of each prompt input of the results.
         detector_types (tuple[str, ...]): The detectors that are used in the results. Defaults to ("input_disapprovals", "internal_disapprovals", "output_disapprovals")
     """
-
     def __init__(
         self,
-        results: list[GenerationSafetyResult],
-        ground_truths: list[bool],
+        results: list[Union[dict, Any]],
+        truth_rule: Callable = lambda x, y: x or y,  
         detector_types: tuple[str, ...] = (
             "input_disapprovals",
             "internal_disapprovals",
             "output_disapprovals",
         ),
     ):
-        """Initialize the SafetyEvaluator with GenerationSafetyResults and corresponding ground truths"""
-        if len(ground_truths) != len(results):
-            raise ValueError(
-                f"Results Length {len(results)} and Ground Truth Length {len(ground_truths)} does not match."
-            )
+        """Initialize the SafetyEvaluator with list of results (either dicts or dataclasses)."""
+        self.results = []
+        for res in results:
+            if is_dataclass(res):
+                self.results.append(asdict(res))
+            elif isinstance(res, dict):
+                self.results.append(res)
+            else:
+                try:
+                    self.results.append(dict(res))
+                except (ValueError, TypeError):
+                    if hasattr(res, "__dict__"):
+                        self.results.append(res.__dict__)
+                    else:
+                        raise TypeError(f"Unsupported result type: {type(res)}")
 
-        self.results = results
-        self.y_true = ground_truths
         self.detector_types = detector_types
 
+        input_truths = []
+        output_truths = []
+        for res in self.results: 
+            input_truths.append(res.get("prompt_label_gold"))
+            output_truths.append(res.get("output_label_gold"))
+
+        ground_truths = []
+        for i in range(len(input_truths)):
+            in_val = input_truths[i]
+            out_val = output_truths[i]
+            ground_truths.append(truth_rule(in_val, out_val))
+
+        if len(ground_truths) != len(self.results):
+            raise ValueError(
+                f"Results Length {len(self.results)} and Ground Truth Length {len(ground_truths)} do not match."
+            )
+
+        self.y_true = ground_truths
+        
     def _extract_detector_values(
         self,
         detector_type: str,
@@ -69,21 +98,30 @@ class SafetyEvaluator:
         """
         values = []
         for res in self.results:
-            if not hasattr(res, detector_type):
+            # Check against dictionary keys rather than object attributes
+            if detector_type not in res:
                 raise ValueError(
-                    f"'{detector_type}' is not a valid Detector Type.\n Valid are: {self.detector_types}"
+                    f"'{detector_type}' is not a valid Detector Type in this result.\n"
+                    f"Available options: {list(res.keys())}"
                 )
-            disapproval_dict = getattr(res, detector_type, {})
+            disapproval_dict = res.get(detector_type) or {}
             if detector_name not in disapproval_dict:
                 raise ValueError(
                     f"Detector '{detector_name}' not found in '{detector_type}'."
                 )
-            detector_dict = disapproval_dict.get(detector_name, {})
+            detector_dict = disapproval_dict.get(detector_name) or {}
             value = detector_dict.get(value_key)
-
             values.append(value)
         return values
-
+        
+    def _extract_overall_disapprovals(
+        self,
+    ) -> list[bool | float]:
+        """Extract form list[GenerationSafetyResult]"""
+        values = []
+        for res in self.results:
+            values.append(res["overall_disapproval"])
+        return values
 
        
     def _get_detector_names(self) -> dict[str, list[str]]:
@@ -91,7 +129,7 @@ class SafetyEvaluator:
         names: dict[str, set[str]] = {dt: set() for dt in self.detector_types}
         for res in self.results:
             for detector_type in self.detector_types:
-                disapproval_dict = getattr(res, detector_type, {})
+                disapproval_dict = res.get(detector_type, {})
                 names[detector_type].update(disapproval_dict.keys())
         return {dt: sorted(ns) for dt, ns in names.items()}
 
@@ -111,12 +149,51 @@ class SafetyEvaluator:
                 metrics[detector_type][detector_name] = metric_func(detector_type, detector_name)
         return metrics
 
+    def _calculate_classification_report(self, y_pred: list) -> dict:
+        """Calculates classification metrics from raw predictions."""
+        return classification_report(
+            self.y_true, y_pred, zero_division=np.nan, output_dict=True
+        )
+
+    def _calculate_rate_metrics(self, cm: np.ndarray) -> dict[str, float]:
+        """Calculates TPR, FNR, FPR, TNR, and Refusal rates from a confusion matrix."""
+        tn, fp, fn, tp = cm.ravel()
+        rates = {}
+        pos = tp + fn if (tp + fn) > 0 else np.nan
+        neg = fp + tn if (fp + tn) > 0 else np.nan
+        total = fp + tn + tp + fn if (fp + tn + tp + fn) > 0 else np.nan
+        rates["TPR"] = tp / pos
+        rates["FNR"] = fn / pos
+        rates["FPR"] = fp / neg
+        rates["TNR"] = tn / neg
+        rates["Refusal"] = (tp + fp) / total if total > 0 else np.nan
+        return rates
+
+    def _calculate_latency_metrics(self, latencies: list[float]) -> dict[str, float]:
+        """Calculates key latency statistics from a list of durations."""
+        latency_metrics = {}
+        latency_metrics["mean"] = np.mean(latencies)
+        latency_metrics["max"] = np.max(latencies)
+        latency_metrics["min"] = np.min(latencies)
+        latency_metrics["median"] = np.median(latencies)
+        latency_metrics["p99"] = np.percentile(latencies, 99)
+        latency_metrics["p95"] = np.percentile(latencies, 95)
+
+        return latency_metrics
+
+    def get_ideal_refusal(self) -> float:
+        """Calculate the ideal refusal rate, which is the proportion of 
+        ground truth violations relative to the total dataset size.
+        """
+        total_size = len(self.y_true)
+        return sum(self.y_true) / total_size
+
     def get_confusion_matrix(
         self, detector_type: str, detector_name: str
     ) -> np.ndarray:
         """Generates a single confusion matrix for a specified detector.
 
-         Arguments:
+        Arguments:
             detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
             detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
 
@@ -124,12 +201,12 @@ class SafetyEvaluator:
             A confusion matrix with the labels in order: TN, FP, FN, TP
         """
         y_pred = self._extract_detector_values(detector_type, detector_name, "disapproved")
-        return confusion_matrix(self.y_true, y_pred)
+        return confusion_matrix(self.y_true, y_pred, labels=[False,True])
 
     def get_classification_report(self, detector_type: str, detector_name: str) -> dict:
         """Generates a single classification report for a specified detector.
 
-         Arguments:
+        Arguments:
             detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
             detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
 
@@ -137,77 +214,34 @@ class SafetyEvaluator:
             A dictionary with the precision, recall and f1-score.
         """
         y_pred = self._extract_detector_values(detector_type, detector_name, "disapproved")
-        return classification_report(
-            self.y_true, y_pred, zero_division=np.nan, output_dict=True
-        )
-
-    def display_confusion_matrix(self, detector_type: str, detector_name: str) -> None:
-        """Displays a confusion matrix for the given arguments.
-
-        Arguments:
-            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
-            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
-
-        """
-        cm = self.get_confusion_matrix(detector_type, detector_name)
-        cm_display = ConfusionMatrixDisplay(cm)
-        cm_display.plot()
-        plt.show()
+        return self._calculate_classification_report(y_pred)
 
     def get_rate_metrics(
         self, detector_type: str, detector_name: str
     ) -> dict[str, float]:
-        """Generates the metrics TPR, FNR, FPR, TNR, RefusalRate for a given detector..
-
-        Arguments:
-            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
-            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
-
-        Returns:
-            A dictionary with the keys "TPR", "FNR", "FPR", "TNR", "Refusal".
-        """
-        rates = {}
-
+        """Generates the metrics TPR, FNR, FPR, TNR, RefusalRate for a given detector."""
         cm = self.get_confusion_matrix(detector_type, detector_name)
-        # false_truth+false_pred, false_truth+true_pred, true_truth+false_pred, true_truth+true_pred
-        # TrueNeg, FalsePos, FalseNeg, TruePos
-        tn, fp, fn, tp = cm.ravel()
-
-        pos_pred = tp + fp if (tp + fp) > 0 else np.nan
-        pos = tp + fn if (tp + fn) > 0 else np.nan
-        neg = fp + tn if (fp + tn) > 0 else np.nan
-        total = fp + tn + tp + fn if (fp + tn + tp + fn) > 0 else np.nan
-
-        rates["TPR"] = tp / pos  # recall
-        rates["FNR"] = fn / pos  # miss rate
-        rates["FPR"] = fp / neg  # false alarm
-        rates["TNR"] = tn / neg  # selectivity
-        rates["Refusal"] = pos_pred / total
-
-        return rates
+        return self._calculate_rate_metrics(cm)
 
     def get_latency(self, detector_type: str, detector_name: str) -> dict[str, float]:
-        """Generate a single list of latency metrics for a specified detector.
-
-        Arguments:
-            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
-            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
-
-        Returns:
-            A dictionary with the keys "mean", "max", "min", "median", "p95", "p99".
-
-        """
-        latency_metrics = defaultdict()
+        """Generate a single list of latency metrics for a specified detector."""
         latencies = self._extract_detector_values(
             detector_type, detector_name, "latency"
         )
-        latency_metrics["mean"] = np.mean(latencies)
-        latency_metrics["max"] = np.max(latencies)
-        latency_metrics["min"] = np.min(latencies)
-        latency_metrics["median"] = np.median(latencies)
-        latency_metrics["p99"] = np.percentile(latencies, 99)
-        latency_metrics["p95"] = np.percentile(latencies, 95)
-        return latency_metrics
+        return self._calculate_latency_metrics(latencies)
+
+
+    def get_ensemble_confusion_matrix(self) -> np.ndarray:
+        y_pred = self._extract_overall_disapprovals()
+        return confusion_matrix(self.y_true, y_pred, labels = [False,True])
+
+    def get_ensemble_classification_report(self) -> dict:
+        y_pred = self._extract_overall_disapprovals()
+        return self._calculate_classification_report(y_pred)
+
+    def get_ensemble_rate_metrics(self) -> dict[str, float]:
+        cm = self.get_ensemble_confusion_matrix()
+        return self._calculate_rate_metrics(cm)
 
     def get_all_latency_metrics(self) -> dict[str, dict[str, float]]:
         """Generate all latency metrics for each unique detector in the results.
@@ -242,6 +276,7 @@ class SafetyEvaluator:
             A dictionary of detector dictionaries with the keys "TPR", "FNR", "FPR", "TNR", "Refusal".
         """
         return self._get_all_metrics(self.get_rate_metrics)
+    
 
     def _print_metrics_in_table(self, metrics: dict) -> None:
         """Print all the given metrics in a table format.
@@ -331,13 +366,24 @@ class SafetyEvaluator:
                 print(tabulate(table_metrics, headers, tablefmt="github"))
                 print(f"***** Overall Accuracy {accuracy} *****")
 
+    def display_confusion_matrix(self, cm) -> None:
+        """Displays a confusion matrix for the given arguments.
 
+        Arguments:
+            detector_type (str): The type of the detector e.g. input_disapprovals, internal_disapprovals, output_disapprovals
+            detector_name (str): The concrete name of the detector as specified in the config.yaml e.g. Toxicbert_input
+
+        """
+        cm_display = ConfusionMatrixDisplay(cm)
+        cm_display.plot()
+        plt.show()
+        
 if __name__ == "__main__":
     cur_dir = Path(__file__).resolve()
     yaml_path = cur_dir.parent / "results.yaml"
     with open(yaml_path, "r") as f:
         results = yaml.load(f, Loader=yaml.UnsafeLoader)
 
-    eval = SafetyEvaluator(results, [True, False])
-    metrics = eval.get_all_classification_reports()
-    eval.print_all_classification_reports(metrics)
+    eval = SafetyEvaluator(results, [True, False],[True,False])
+    #metrics = eval.get_all_classification_reports()
+    #eval.print_all_classification_reports(metrics)

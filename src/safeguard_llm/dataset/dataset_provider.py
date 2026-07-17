@@ -11,7 +11,7 @@ class DatasetProvider():
             from datasets import load_dataset
             ds = load_dataset(self.dataset_name,split)            
             ds = ds.shuffle(seed)
-            ds = ds[subset].select(range(size))
+            ds = ds[subset].select(range(size),seed=seed)
             return ds
         else:
             raise ValueError("Incorrect data source")
