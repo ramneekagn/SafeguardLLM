@@ -50,9 +50,6 @@ class BERTdetector(Detector):
         probs = torch.softmax(outputs.logits, dim=-1)
         target_label_probs = probs[:, self.label_pos]
         
-        # Diagnostic print statement
-        print(f"Raw probabilities: {target_label_probs.tolist()[:10]}")
-        
         return (target_label_probs > self.threshold).tolist()
 
 

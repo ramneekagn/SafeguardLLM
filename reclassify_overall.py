@@ -20,8 +20,8 @@ def reclassify(results, rule_func):
 
 def implication_rule(entry):
 
-    input_bert = entry["input_disapprovals"]["InputRobertaJBDetector"]["disapproved"]
-    input_lp = entry["internal_disapprovals"]["LPInternalDetector1"]["disapproved"]
+    input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
+    input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
     conditional_lp = entry["internal_disapprovals"]["LPInternalDetectorConditonal"]["disapproved"]
     output_bert = entry["output_disapprovals"]["OutputRobertaJBDetector"]["disapproved"]
 
@@ -34,14 +34,14 @@ def implication_rule(entry):
 
 def and_rule(entry):
 
-    input_bert = entry["input_disapprovals"]["InputRobertaJBDetector"]["disapproved"]
-    input_lp = entry["internal_disapprovals"]["LPInternalDetector1"]["disapproved"]
-    output_bert = entry["output_disapprovals"]["OutputRobertaJBDetector"]["disapproved"]
+    input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
+    input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
+    output_bert = entry["output_disapprovals"]["OutputDetector1"]["disapproved"]
     return input_bert and input_lp and output_bert
 
 if __name__ == "__main__":
-    json_path = Path("results_thres_0.9_jb_preliminary_dataset_judged.json")
-    save_path = Path("results_thres_0.9_jb_preliminary_dataset_judged_reclassified_and_rule.json")
+    json_path = Path("results_safe_llm_config_jackhao_preliminary_dataset_judged.json")
+    save_path = Path("results_safe_llm_config_jackhao_preliminary_dataset_judged_reclassified_and_rule.json")
 
     with open(json_path, "r", encoding="utf-8") as f:
         results = json.load(f)

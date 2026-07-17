@@ -182,6 +182,13 @@ class SafetyEvaluator:
 
         return latency_metrics
 
+    def get_ideal_refusal(self) -> float:
+        """Calculate the ideal refusal rate, which is the proportion of 
+        ground truth violations relative to the total dataset size.
+        """
+        total_size = len(self.y_true)
+        return sum(self.y_true) / total_size
+
     def get_confusion_matrix(
         self, detector_type: str, detector_name: str
     ) -> np.ndarray:

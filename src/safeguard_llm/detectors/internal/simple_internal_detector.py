@@ -10,7 +10,6 @@ class SimpleInternalDetector(InternalDetector):
         self.pos = 0
         self.threshold = 0
     # the hook gets the entire batch 
-    # the hook gets the entire batch 
     def hook(self, module, input: Tensor, output:Tensor) -> None: 
         self.activation_cache.append(output[:,-1,:].detach().clone().to(self.device)) 
         self.pos += 1

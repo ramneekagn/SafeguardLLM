@@ -57,6 +57,7 @@ def run_evalulation_ensemble(results_dir):
     rate_metrics = evaluator.get_ensemble_rate_metrics()
     class_report = evaluator.get_ensemble_classification_report()
     print(rate_metrics)
+    print("ideal refusal:", evaluator.get_ideal_refusal())
     print(class_report)
 
 def run_evalulation(results_dir): 
@@ -66,21 +67,25 @@ def run_evalulation(results_dir):
     evaluator = SafetyEvaluator(results, truth_rule= lambda x,y: x )
 
     print("input")
-    input_class_metrics = evaluator.get_rate_metrics("input_disapprovals", "InputRobertaJBDetector")
+    input_class_metrics = evaluator.get_rate_metrics("input_disapprovals", "InputDetector1")
     print(input_class_metrics)
+    print("ideal refusal:", evaluator.get_ideal_refusal())
+
     print("internal")
-    internal_class_metrics = evaluator.get_rate_metrics("internal_disapprovals", "LPInternalDetector1")
+    internal_class_metrics = evaluator.get_rate_metrics("internal_disapprovals", "InternalDetector1")
     print(internal_class_metrics )
-    print("output")
+    print("ideal refusal:", evaluator.get_ideal_refusal())
+
     evaluator = SafetyEvaluator(results, truth_rule= lambda x,y: y )
     """
     output_class_metrics = evaluator.get_rate_metrics("internal_disapprovals", "LPInternalDetectorConditonal")
     print(output_class_metrics)
     """
     print("output")
-    output_class_metrics = evaluator.get_rate_metrics("output_disapprovals", "OutputRobertaJBDetector")
+    output_class_metrics = evaluator.get_rate_metrics("output_disapprovals", "OutputDetector1")
+    print("ideal refusal:", evaluator.get_ideal_refusal())
     print(output_class_metrics)
 
 if __name__ == "__main__":
-    run_evalulation("results_thres_0.9_jb_preliminary_dataset_judged_reclassified_and_rule.json")
-    run_evalulation_ensemble("results_thres_0.9_jb_preliminary_dataset_judged_reclassified_and_rule.json")
+    run_evalulation("results/results_thres_0.95inp_0.95int_0.5out_jb_preliminary_dataset_judged_reclassified_and_rule.json")
+    run_evalulation_ensemble("results/results_thres_0.95inp_0.95int_0.5out_jb_preliminary_dataset_judged_reclassified_and_rule.json")

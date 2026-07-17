@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from sympy import false
-
 from safeguard_llm.run_safe_llm import run_safe_llm
 from safeguard_llm.utils.save_results import save_results_as_json
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -13,11 +11,8 @@ from datasets import load_dataset,concatenate_datasets, Dataset
 from safeguard_llm.utils.output_judge import Benchmark_Eval
 from dotenv import load_dotenv
 import asyncio
-import json 
-from safeguard_llm.evaluator import SafetyEvaluator
 
-SEED = 40 # better idea for seed config ?
-
+SEED = 40 
 
 # HANDLE DATASETS
 def _check_sample_size(sample_size: int, ds_true: Dataset, ds_false: Dataset) -> int:
@@ -45,280 +40,110 @@ def _prepare_output_file(output_filename: str, dataset_name: str) -> Path:
     test_file = test_file.with_stem(f"{test_file.stem}_{dataset_name}")
     return test_file
 
-
-def prepare_dataset(dataset_name: str, sample_size: int = 210):
-    """ Returns a Hugging Face dataset with standardized columns: 'prompt' and 'label' """
-
-    # === BALANCED DATASETS ===
-    if dataset_name == "wildjailbreak":
-        dataset = load_dataset("allenai/wildjailbreak", "eval", delimiter="\t", keep_default_na=False)
-        ds_true = dataset["train"].filter(lambda elm: elm["label"] == 1)
-        ds_false = dataset["train"].filter(lambda elm: elm["label"] == 0)
-
-        sample_size = _check_sample_size(sample_size, ds_true, ds_false)
-        ds_true = ds_true.select(range(sample_size))
-        ds_false = ds_false.select(range(sample_size))
-        dataset = concatenate_datasets([ds_true, ds_false])
-
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["adversarial"],
-            "label": elm["label"]
-        })
-    if dataset_name == "wildjailbreak-vanilla":
-            dataset = load_dataset("allenai/wildjailbreak", "train", delimiter="\t", keep_default_na=False)
-            ds_true = dataset["train"].filter(lambda elm: elm["data_type"] == "vanilla_harmful")
-            ds_false = dataset["train"].filter(lambda elm: elm["data_type"] == "vanilla_benign")
-
-            sample_size = _check_sample_size(sample_size, ds_true, ds_false)
-            ds_true = ds_true.select(range(sample_size))
-            ds_false = ds_false.select(range(sample_size))
-            dataset = concatenate_datasets([ds_true, ds_false])
-
-            dataset = dataset.map(lambda elm: {
-                "prompt": elm["vanilla"],
-                "label": 1 if elm["data_type"] == "vanilla_harmful" else 0
-            })
-
-    elif dataset_name == "preliminary_dataset": 
-            ds_true = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="harmful")
-            ds_true = ds_true.map(
+def _get_standardized_split(source: str, size: int, seed: int) -> Dataset:
+    """Loads, standardizes, and returns a dataset split with columns: 'prompt' and 'label'."""
+    if source == "wildchat-benign":
+            ds = load_dataset("allenai/WildChat-nontoxic", split="train")
+            ds = ds.shuffle(seed=seed)
+            buffer_size = size * 15
+            #select first otherwise filtering takes too long 
+            ds_subset = ds.select(range(buffer_size))
+            ds_filtered = ds_subset.filter(lambda entry: entry["language"] == "English")
+            ds_final = ds_filtered.select(range(size))
+            return ds_final.map(
                 lambda elm: {
-                    "prompt": elm["Goal"],
-                    "label": 1
+                    "prompt": elm["conversation"][0]["content"],
+                    "label": 0,
                 },
-                remove_columns=ds_true.column_names
-            )
+                remove_columns=ds_final.column_names,
+        )
+    elif source == "jbb-harmful":
+        ds = load_dataset(
+            "JailbreakBench/JBB-Behaviors", "behaviors", split="harmful"
+        )
+        ds = ds.shuffle(seed=seed)
+        size = _check_single_sample_size(size, ds)
+        ds = ds.select(range(size))
+        return ds.map(
+            lambda elm: {"prompt": elm["Goal"], "label": 1},
+            remove_columns=ds.column_names,
+        )
 
-            ds_false = load_dataset("tatsu-lab/alpaca", split="train")
-            sample_size = _check_single_sample_size(sample_size, ds_false)
-            ds_false = ds_false.select(range(sample_size))
-            ds_false = ds_false.map(lambda elm: {
-                "prompt": elm["instruction"],
-                "label": 0
-            }, remove_columns=ds_false.column_names)
+    elif source == "jbb-benign":
+        ds = load_dataset(
+            "JailbreakBench/JBB-Behaviors", "behaviors", split="benign"
+        )
+        ds = ds.shuffle(seed=seed)
+        size = _check_single_sample_size(size, ds)
+        ds = ds.select(range(size))
+        return ds.map(
+            lambda elm: {"prompt": elm["Goal"], "label": 0},
+            remove_columns=ds.column_names,
+        )
 
-            sample_size = _check_sample_size(sample_size, ds_true, ds_false)
-            ds_true = ds_true.select(range(sample_size))
-            ds_false = ds_false.select(range(sample_size))
-            dataset = concatenate_datasets([ds_true, ds_false])
+    elif source == "xstest-benign":
+        ds = load_dataset("walledai/XSTest", split="test")
+        ds = ds.filter(lambda elm: elm["label"] == "safe")
+        ds = ds.shuffle(seed=seed)
+        size = _check_single_sample_size(size, ds)
+        ds = ds.select(range(size))
+        return ds.map(
+            lambda elm: {"prompt": elm["prompt"], "label": 0},
+            remove_columns=ds.column_names,
+        )
 
+    elif source == "xstest-harmful":
+        ds = load_dataset("walledai/XSTest", split="test")
+        ds = ds.filter(lambda elm: elm["label"] == "unsafe")
+        ds = ds.shuffle(seed=seed)
+        size = _check_single_sample_size(size, ds)
+        ds = ds.select(range(size))
+        return ds.map(
+            lambda elm: {"prompt": elm["prompt"], "label": 1},
+            remove_columns=ds.column_names,
+        )
 
-    elif dataset_name == "jailbreak-classification":
-        dataset = load_dataset("jackhhao/jailbreak-classification", "default", delimiter="\t", keep_default_na=False)
+    else:
+        raise ValueError(f"Unknown data source: {source}")
+    
+def prepare_dataset(
+    dataset_name: str, sample_size: int = 200, seed: int = SEED
+) -> Dataset:
+    """Returns a Hugging Face dataset with standardized columns: 'prompt' and 'label'"""
+    # Force sample size to be an integer
+    if dataset_name == "50_50_xstest":
+        benign = _get_standardized_split("xstest-benign", sample_size, seed)
+        harmful = _get_standardized_split("xstest-harmful", sample_size, seed)
+        return concatenate_datasets([benign, harmful])
 
-        ds_true = dataset["test"].filter(lambda elm: elm["type"] == "jailbreak")
-        ds_false = dataset["test"].filter(lambda elm: elm["type"] == "benign")
+    elif dataset_name == "50_50_hard":
+        benign = _get_standardized_split("jbb-benign", sample_size, seed)
+        harmful = _get_standardized_split("jbb-harmful", sample_size, seed)
+        return concatenate_datasets([benign, harmful])
 
-        sample_size = _check_sample_size(sample_size, ds_true, ds_false)
+    elif dataset_name == "0_100":
+        return _get_standardized_split("wildchat-benign", sample_size, seed)
 
-        ds_true = ds_true.select(range(sample_size))
-        ds_false = ds_false.select(range(sample_size))
+    elif dataset_name == "100_0":
+        return _get_standardized_split("jbb-harmful", sample_size, seed)
 
-        dataset = concatenate_datasets([ds_true, ds_false])
-        # dunno how the dataset looks like, just added prompt exolicitly to catch errors early
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["prompt"],
-            "label": 1 if elm["type"] == "jailbreak" else 0})
+    elif dataset_name == "50_50_easy":
+        benign = _get_standardized_split("wildchat-benign", sample_size, seed)
+        harmful = _get_standardized_split("jbb-harmful", sample_size, seed)
+        return concatenate_datasets([benign, harmful])
 
-    # === UNBALANCED DATASETS ===
-    elif dataset_name == "jailbreakbench-benign":
-        dataset = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="benign")
-        sample_size = _check_single_sample_size(sample_size, dataset)
-        dataset = dataset.select(range(sample_size))
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["Goal"],
-            "label": 0
-        }, remove_columns=dataset.column_names)
+    elif dataset_name == "1_99":
+        target_size = max(sample_size, 1000)
+        size_benign = int(target_size * 0.99)
+        size_harmful = int(target_size * 0.01)
 
-    elif dataset_name == "jailbreakbench-harmful":
-        dataset = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="harmful")
-        sample_size = _check_single_sample_size(sample_size, dataset)
-        dataset = dataset.select(range(sample_size))
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["Goal"],
-            "label": 1
-        }, remove_columns=dataset.column_names)
-
-
-    elif dataset_name == "xstest-safe":
-        dataset = load_dataset("walledai/XSTest", split="test")
-        dataset = dataset.filter(lambda elm: elm["label"] == "safe")
-        sample_size = _check_single_sample_size(sample_size, dataset)
-        dataset = dataset.select(range(sample_size))
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["prompt"],
-            "label": 0
-        }, remove_columns=dataset.column_names)
-
-    elif dataset_name == "xstest-unsafe":
-        dataset = load_dataset("walledai/XSTest", split="test")
-        dataset = dataset.filter(lambda elm: elm["label"] == "unsafe")
-        sample_size = _check_single_sample_size(sample_size, dataset)
-        dataset = dataset.select(range(sample_size))
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["prompt"],
-            "label": 1
-        }, remove_columns=dataset.column_names)
-
-    elif dataset_name == "coconot":
-        dataset = load_dataset("allenai/coconot", "contrast", split="test")
-        sample_size = _check_single_sample_size(sample_size, dataset)
-        dataset = dataset.select(range(sample_size))
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["prompt"],
-            "label": 0
-        }, remove_columns=dataset.column_names)
-
-
-    elif dataset_name == "alpaca":
-        dataset = load_dataset("tatsu-lab/alpaca", split="train")
-        sample_size = _check_single_sample_size(sample_size, dataset)
-        dataset = dataset.select(range(sample_size))
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["instruction"],
-            "label": 0
-        }, remove_columns=dataset.column_names)
-
-    # === NEW SPLITS ===
-    elif dataset_name == "50_50_xstest": # bonus
-        dataset_benign = load_dataset("walledai/XSTest", split="test")
-        dataset_benign = dataset_benign.filter(lambda elm: elm["label"] == "safe")
-        sample_size = _check_single_sample_size(sample_size, dataset_benign)
-        dataset_benign = dataset_benign.select(range(sample_size))
-        dataset_benign = dataset_benign.map(lambda elm: {
-            "prompt": elm["prompt"],
-            "label": 0
-        }, remove_columns=dataset_benign.column_names)
-
-        dataset_harmful = load_dataset("walledai/XSTest", split="test")
-        dataset_harmful = dataset_harmful.filter(lambda elm: elm["label"] == "unsafe")
-        sample_size = _check_single_sample_size(sample_size, dataset_harmful)
-        dataset_harmful = dataset_harmful.select(range(sample_size))
-        dataset_harmful = dataset_harmful.map(lambda elm: {
-            "prompt": elm["prompt"],
-            "label": 1
-        }, remove_columns=dataset_harmful.column_names)
-
-        dataset = concatenate_datasets([dataset_benign, dataset_harmful])
-
-    elif dataset_name == "50_50_hard": # JBB-Behaviors # WRONG SAMPLE SIZE
-        dataset_benign = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="benign")
-        sample_size = _check_single_sample_size(sample_size, dataset_benign)
-        dataset_benign = dataset_benign.shuffle(seed=SEED)
-        dataset_benign = dataset_benign.select(range(sample_size))
-        dataset_benign = dataset_benign.map(lambda elm: {
-            "prompt": elm["Goal"],
-            "label": 0
-        }, remove_columns=dataset_benign.column_names)
-
-        dataset_harmful = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="harmful")
-        sample_size = _check_single_sample_size(sample_size, dataset_harmful)
-        dataset_harmful = dataset_harmful.shuffle(seed=SEED)
-        dataset_harmful = dataset_harmful.select(range(sample_size))
-        dataset_harmful = dataset_harmful.map(lambda elm: {
-            "prompt": elm["Goal"],
-            "label": 1
-        }, remove_columns=dataset_harmful.column_names)
-
-        dataset = concatenate_datasets([dataset_benign, dataset_harmful])
-
-    elif dataset_name == "0_100": # Wildchat-nontoxic
-        dataset = load_dataset("allenai/WildChat-nontoxic", split="train")
-        dataset = dataset.filter(lambda entry: entry["language"] == "English")
-        dataset = dataset.shuffle(seed=SEED)
-        sample_size = _check_single_sample_size(sample_size, dataset)
-        dataset = dataset.select(range(sample_size))
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["conversation"][0]["content"],
-            "label": 0
-        }, remove_columns=dataset.column_names)
-
-    elif dataset_name == "100_0": # JBB-Behaviors only attacks
-        dataset = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="harmful")
-        sample_size = _check_single_sample_size(sample_size, dataset)
-        dataset = dataset.select(range(sample_size))
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["Goal"],
-            "label": 1
-        }, remove_columns=dataset.column_names)
-
-    elif dataset_name == "50_50_easy": # Wildchat-nontoxic + JBB parts
-        dataset = load_dataset("allenai/WildChat-nontoxic", split="train")
-        dataset = dataset.filter(lambda entry: entry["language"] == "English")
-        dataset = dataset.shuffle(seed=SEED)
-        sample_size = _check_single_sample_size(sample_size, dataset)
-        dataset = dataset.select(range(sample_size))
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["conversation"][0]["content"],
-            "label": 0
-        }, remove_columns=dataset.column_names)
-
-    elif dataset_name == "1_99": # Wildchat-nontoxic + some JBB
-        # TODO: which sample size should this split have at least? 100 (1 vs 99) seems too low?
-        if sample_size < 1000:
-            sample_size = 1000
-        sample_size_benign = int(sample_size * 0.99)
-        sample_size_harmful = int(sample_size * 0.01)
-
-        dataset_benign = load_dataset("allenai/WildChat-nontoxic", split="train")
-        dataset_benign = dataset_benign.filter(lambda entry: entry["language"] == "English")
-        dataset_benign = dataset_benign.shuffle(seed=SEED)
-        sample_size_benign = _check_single_sample_size(sample_size_benign, dataset_benign)
-        dataset_benign = dataset_benign.select(range(sample_size_benign))
-        dataset_benign = dataset_benign.map(lambda elm: {
-            "prompt": elm["conversation"][0]["content"],
-            "label": 0
-        }, remove_columns=dataset_benign.column_names)
-
-        dataset_harmful = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors", split="harmful")
-        dataset_harmful = dataset_harmful.shuffle(seed=SEED)
-        sample_size_harmful = _check_single_sample_size(sample_size_harmful, dataset_harmful)
-        dataset_harmful = dataset_harmful.select(range(sample_size_harmful))
-        dataset_harmful = dataset_harmful.map(lambda elm: {
-            "prompt": elm["Goal"],
-            "label": 1
-        }, remove_columns=dataset_harmful.column_names)
-
-        dataset = concatenate_datasets([dataset_benign, dataset_harmful])
+        benign = _get_standardized_split("wildchat-benign", size_benign, seed)
+        harmful = _get_standardized_split("jbb-harmful", size_harmful, seed)
+        return concatenate_datasets([benign, harmful])
 
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented.")
-
-    return dataset
-
-# still ugly, how to handle xstest case ? maybe better split loading and mapping ?
-def _load_dataset_helper(path: str, name: str | None = None, split: str | None = None, sample_size=1):
-    # load dataset
-    if name:
-        dataset = load_dataset(path, name, split=split, keep_default_na=False)
-    else:
-        dataset = load_dataset(path, split=split, keep_default_na=False)
-    # special filter for dataset
-    if path == "allenai/WildChat-nontoxic":
-        dataset = dataset.filter(lambda entry: entry["language"] == "English")
-    dataset = dataset.shuffle(seed=SEED)
-    sample_size = _check_single_sample_size(sample_size, dataset)
-    dataset = dataset.select(range(sample_size))
-    # mapping for given dataset
-    if path == "allenai/WildChat-nontoxic":
-        dataset = dataset.map(lambda elm: {
-            "prompt": elm["conversation"][0]["content"],
-            "label": 1
-        }, remove_columns=dataset.column_names)
-    elif path == "JailbreakBench/JBB-Behaviors":
-        if split == "harmful":
-            dataset = dataset.map(lambda elm: {
-                "prompt": elm["Goal"],
-                "label": 1
-            }, remove_columns=dataset.column_names)
-        elif split == "benign":
-            dataset = dataset.map(lambda elm: {
-                "prompt": elm["Goal"],
-                "label": 0
-            }, remove_columns=dataset.column_names)
-
-    return dataset
-
+    
 # EXECUTION
 
 def run_and_judge(
@@ -353,19 +178,17 @@ def run_and_judge(
     )
 
     outputs = []
-    all_labels = []
+    gold_labels = dataset["label"]
 
     # inference
     for batch in tqdm(dataloader):
         inputs = batch["prompt"]
-        labels = batch["label"]
-        all_labels.extend(labels)
         output = safe_model.generate(inputs)
         outputs.extend(output)
 
-    # process gold labels ?
+    # process gold labels 
     for i, res in enumerate(outputs):
-        val = all_labels[i]
+        val = gold_labels[i]
         val = int(val)
         if val == 0:
             res.output_label_gold = False
@@ -385,4 +208,5 @@ if __name__ == "__main__":
     tests = ["50_50_easy", "50_50_hard", "50_50_xstest", "100_0", "0_100", "1_99"]
     for test in tests:
         print(test)
-        prepare_dataset(test, 1)
+        dataset = prepare_dataset(test, 1)
+        print(dataset)

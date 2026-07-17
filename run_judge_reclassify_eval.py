@@ -14,6 +14,7 @@ def run_pipeline(dataset_name, output_filename="results_jb.json", rule_func=impl
         output_filename=output_filename,
         sample_size=sample_size,
         batch_size=batch_size,
+        config_path = Path("src/safeguard_llm/config/safe_llm_config_mmbert32k.yaml"),
         willJudge=True
     )
 
@@ -36,7 +37,7 @@ dataset_name = "preliminary_dataset"
 
 run_pipeline(
     dataset_name=dataset_name,
-    output_filename="results_thres_0.95inp_0.95int_0.5out_jb.json",
+    output_filename="results_safe_llm_config_jackhao.json",
     rule_func=and_rule,
     sample_size=100,
     batch_size=8
