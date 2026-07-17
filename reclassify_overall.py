@@ -19,7 +19,6 @@ def reclassify(results, rule_func):
     return results
 
 def implication_rule(entry):
-
     input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
     input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
     conditional_lp = entry["internal_disapprovals"]["LPInternalDetectorConditonal"]["disapproved"]
@@ -33,11 +32,23 @@ def implication_rule(entry):
     return implication and output_bert
 
 def and_rule(entry):
-
     input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
     input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
     output_bert = entry["output_disapprovals"]["OutputDetector1"]["disapproved"]
     return input_bert and input_lp and output_bert
+
+
+def or_rule(entry):
+    input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
+    input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
+    output_bert = entry["output_disapprovals"]["OutputDetector1"]["disapproved"]
+    return input_bert or input_lp or output_bert
+
+def majority_vote(entry):
+    input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
+    input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
+    output_bert = entry["output_disapprovals"]["OutputDetector1"]["disapproved"]
+    return (input_bert + input_lp + output_bert) >= 2
 
 if __name__ == "__main__":
     json_path = Path("results_safe_llm_config_jackhao_preliminary_dataset_judged.json")

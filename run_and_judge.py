@@ -1,16 +1,16 @@
 from pathlib import Path
-
 from safeguard_llm.run_safe_llm import run_safe_llm
 from safeguard_llm.utils.save_results import save_results_as_json
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from safeguard_llm.safety_harness import SafeLLM
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-from pathlib import Path
 from datasets import load_dataset,concatenate_datasets, Dataset
 from safeguard_llm.utils.output_judge import Benchmark_Eval
 from dotenv import load_dotenv
 import asyncio
+import json 
+from dataclasses import asdict
 
 SEED = 40 
 
@@ -110,7 +110,6 @@ def prepare_dataset(
     dataset_name: str, sample_size: int = 200, seed: int = SEED
 ) -> Dataset:
     """Returns a Hugging Face dataset with standardized columns: 'prompt' and 'label'"""
-    # Force sample size to be an integer
     if dataset_name == "50_50_xstest":
         benign = _get_standardized_split("xstest-benign", sample_size, seed)
         harmful = _get_standardized_split("xstest-harmful", sample_size, seed)
@@ -148,8 +147,8 @@ def prepare_dataset(
 
 def run_and_judge(
         dataset_name: str,
-        output_filename: str,
-        sample_size: int, # mayeb default ?
+        output_filepath: Path, 
+        sample_size: int,
         batch_size: int,
         willJudge: bool,
         max_gen_len: int = 256,
@@ -162,7 +161,6 @@ def run_and_judge(
     dataset = prepare_dataset(dataset_name, sample_size=sample_size)
     dataloader = DataLoader(dataset, batch_size=batch_size)
 
-    # init model + tokenizer
     model = AutoModelForCausalLM.from_pretrained(
         model_name, device_map="auto"
     )
@@ -177,31 +175,38 @@ def run_and_judge(
         config_path=config_path
     )
 
-    outputs = []
+    results = []
     gold_labels = dataset["label"]
 
     # inference
     for batch in tqdm(dataloader):
         inputs = batch["prompt"]
         output = safe_model.generate(inputs)
-        outputs.extend(output)
+        results.extend(output)
 
     # process gold labels 
-    for i, res in enumerate(outputs):
+    for i, res in enumerate(results):
         val = gold_labels[i]
         val = int(val)
-        if val == 0:
-            res.output_label_gold = False
         res.prompt_label_gold = bool(val)
+    serialized_results = [asdict(res) for res in results]
+    test_file = _prepare_output_file(output_filepath, dataset_name)
+    # Write initial raw output
+    output_filepath.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_filepath, "w", encoding="utf-8") as f:
+        json.dump(serialized_results, f, indent=4)
 
-    test_file = _prepare_output_file(output_filename, dataset_name)
-    save_results_as_json(outputs, test_file)
-
-    # llm judge
+    # LLM judge
     if willJudge:
         print(f"Judging {dataset_name}")
-        be = Benchmark_Eval(test_file)
+        be = Benchmark_Eval(output_filepath)
         asyncio.run(be.execute_judgement())
+        
+        judged_filepath = output_filepath.with_stem(f"{output_filepath.stem}_judged")
+        with open(judged_filepath, "r", encoding="utf-8") as f:
+            results = json.load(f)
+            
+    return results
 
 if __name__ == "__main__":
     load_dotenv()

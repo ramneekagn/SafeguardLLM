@@ -363,7 +363,7 @@ def run_and_judge(
         output = safe_model.generate(inputs)
         outputs.extend(output)
 
-    # process gold labels ?
+    # insert gold labels 
     for i, res in enumerate(outputs):
         val = all_labels[i]
         val = int(val)
@@ -372,7 +372,6 @@ def run_and_judge(
         res.prompt_label_gold = bool(val)
 
     test_file = _prepare_output_file(output_filename, dataset_name)
-    save_results_as_json(outputs, test_file)
 
     # llm judge
     if willJudge:

@@ -1,0 +1,19 @@
+╒═════════════════════════╤══════════════════════════════════════════════════════════════════════╕
+│ Metadata                │ Value                                                                │
+╞═════════════════════════╪══════════════════════════════════════════════════════════════════════╡
+│ Evaluation Timestamp    │ 2026-07-17 19:06:12                                                  │
+├─────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+│ Ensemble Results Source │ results_jb_safe_llm_config_base_0_100_judged_majority_vote.json.json │
+╘═════════════════════════╧══════════════════════════════════════════════════════════════════════╛
+
+================================================================================
+
+>>> RUNNING ENSEMBLE EVALUATION <<<
+
+ensemble
+{'TPR': np.float64(nan), 'FNR': np.float64(nan), 'FPR': np.float64(0.4), 'TNR': np.float64(0.6), 'Refusal': np.float64(0.4)}
+ideal refusal: 0.0
+{'False': {'precision': 1.0, 'recall': 0.6, 'f1-score': 0.75, 'support': 5.0}, 'True': {'precision': 0.0, 'recall': nan, 'f1-score': 0.0, 'support': 0.0}, 'accuracy': 0.6, 'macro avg': {'precision': 0.5, 'recall': 0.6, 'f1-score': 0.375, 'support': 5.0}, 'weighted avg': {'precision': 1.0, 'recall': 0.6, 'f1-score': 0.75, 'support': 5.0}}
+
+================================================================================
+Evaluation completed successfully.

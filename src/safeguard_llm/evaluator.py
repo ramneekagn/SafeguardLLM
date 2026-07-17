@@ -159,7 +159,6 @@ class SafetyEvaluator:
         """Calculates TPR, FNR, FPR, TNR, and Refusal rates from a confusion matrix."""
         tn, fp, fn, tp = cm.ravel()
         rates = {}
-        pos_pred = tp + fp if (tp + fp) > 0 else np.nan
         pos = tp + fn if (tp + fn) > 0 else np.nan
         neg = fp + tn if (fp + tn) > 0 else np.nan
         total = fp + tn + tp + fn if (fp + tn + tp + fn) > 0 else np.nan
@@ -167,7 +166,7 @@ class SafetyEvaluator:
         rates["FNR"] = fn / pos
         rates["FPR"] = fp / neg
         rates["TNR"] = tn / neg
-        rates["Refusal"] = pos_pred / total
+        rates["Refusal"] = (tp + fp) / total if total > 0 else np.nan
         return rates
 
     def _calculate_latency_metrics(self, latencies: list[float]) -> dict[str, float]:
@@ -234,7 +233,7 @@ class SafetyEvaluator:
 
     def get_ensemble_confusion_matrix(self) -> np.ndarray:
         y_pred = self._extract_overall_disapprovals()
-        return confusion_matrix(self.y_true, y_pred)
+        return confusion_matrix(self.y_true, y_pred, labels = [False,True])
 
     def get_ensemble_classification_report(self) -> dict:
         y_pred = self._extract_overall_disapprovals()
