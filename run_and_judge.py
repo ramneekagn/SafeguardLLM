@@ -127,26 +127,26 @@ def prepare_dataset(
         harmful = _get_standardized_split("xstest-harmful", sample_size, seed)
         return concatenate_datasets([benign, harmful])
 
-    elif dataset_name == "50_50_hard":
+    elif dataset_name == "50_50_hard_jbb-benign_jbb-harmful":
         benign = _get_standardized_split("jbb-benign", sample_size, seed)
         harmful = _get_standardized_split("jbb-harmful", sample_size, seed)
         return concatenate_datasets([benign, harmful])
     #100 harmless
-    elif dataset_name == "0_100":
+    elif dataset_name == "0_100_alpaca_cleaned":
         return _get_standardized_split("alpaca-cleaned", sample_size, seed)
 
     #100 harmful
-    elif dataset_name == "100_0":
+    elif dataset_name == "100_0_jbb_harmful":
         return _get_standardized_split("jbb-harmful", sample_size, seed)
 
     #easy
-    elif dataset_name == "50_50_easy":
+    elif dataset_name == "50_50_easy_jbb-harmful_alpaca_cleaned":
         benign = _get_standardized_split("alpaca-cleaned", sample_size, seed)
         harmful = _get_standardized_split("jbb-harmful", sample_size, seed)
         return concatenate_datasets([benign, harmful])
 
     #realistic
-    elif dataset_name == "1_99":
+    elif dataset_name == "1_99_jbb-harmful_wildchat-benign":
         target_size = max(sample_size, 1000)
         size_benign = int(target_size * 0.99)
         size_harmful = int(target_size * 0.01)
