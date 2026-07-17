@@ -13,7 +13,7 @@ os.environ["HF_DATASETS_OFFLINE"] = "1"
 from datasets import load_dataset
 
 #AI generated logger prompt: "generate me log file that runs the evaluations and logs the results in a text file"
-def log_eval(name, ensemble_results_dir, log_dir="logs"):
+def log_eval(name,sample_size, ensemble_results_dir,  log_dir="logs"):
     """
     Executes the standard and ensemble evaluations, capturing all console 
     outputs and writing them into a timestamped log file.
@@ -30,7 +30,8 @@ def log_eval(name, ensemble_results_dir, log_dir="logs"):
         with redirect_stdout(f):
             header_data = [
                 ["Evaluation Timestamp", datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
-                ["Ensemble Results Source", ensemble_results_dir]
+                ["Ensemble Results Source", ensemble_results_dir],
+                ["Sample size", sample_size ]
             ]
             print(tabulate(header_data, headers=["Metadata", "Value"], tablefmt="fancy_grid"))
             print("\n" + "=" * 80 + "\n")

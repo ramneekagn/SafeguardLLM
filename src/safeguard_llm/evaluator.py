@@ -201,7 +201,7 @@ class SafetyEvaluator:
             A confusion matrix with the labels in order: TN, FP, FN, TP
         """
         y_pred = self._extract_detector_values(detector_type, detector_name, "disapproved")
-        return confusion_matrix(self.y_true, y_pred)
+        return confusion_matrix(self.y_true, y_pred, labels=[False,True])
 
     def get_classification_report(self, detector_type: str, detector_name: str) -> dict:
         """Generates a single classification report for a specified detector.

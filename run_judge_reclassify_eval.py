@@ -8,8 +8,9 @@ import os
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
 
-def run_pipeline(dataset_name, config_path, base_output_dir="results", config_name="safe_llm_config_base", sample_size=100, batch_size=8):
-    dataset_dir = Path(base_output_dir) / config_name / dataset_name
+def run_pipeline(dataset_name, config_path, run_name, base_output_dir="results", config_name="safe_llm_config_base", sample_size=100, batch_size=8):
+    name = f"{config_name}_{run_name}"
+    dataset_dir = Path(base_output_dir) / name / dataset_name
     if dataset_dir.exists():
         raise FileExistsError(
             f"Target directory already exists: '{dataset_dir}'. "
@@ -35,17 +36,20 @@ def run_pipeline(dataset_name, config_path, base_output_dir="results", config_na
         print(f"Saving reclassified results to: {ensemble_path}")
         with open(ensemble_path, "w", encoding="utf-8") as f:
             json.dump(reclassified_results, f, indent=4)
-        log_eval(rule.__name__, ensemble_path, log_dir=dataset_dir)
+        log_eval(rule.__name__, sample_size, ensemble_path, log_dir=dataset_dir)
 
 
 load_dotenv()
+run_name = "full_run"
 config_file_name = "safe_llm_config_base"
 config_path = Path(f"src/safeguard_llm/config/{config_file_name}.yaml")
-dataset_names = ["50_50_easy", "50_50_hard", "50_50_xstest", "100_0", "0_100", "1_99"]
+dataset_names = ["50_50_easy", "50_50_hard",  "100_0", "0_100"]
 for dataset_name in dataset_names:
     run_pipeline(
         dataset_name=dataset_name,
         config_path = config_path,
-        sample_size=100,
+        config_name="safe_llm_config_base",
+        run_name = run_name,
+        sample_size=5,
         batch_size=8
     )

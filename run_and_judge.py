@@ -42,6 +42,17 @@ def _prepare_output_file(output_filename: str, dataset_name: str) -> Path:
 
 def _get_standardized_split(source: str, size: int, seed: int) -> Dataset:
     """Loads, standardizes, and returns a dataset split with columns: 'prompt' and 'label'."""
+    if source == "alpaca-cleaned":
+            ds = load_dataset("yahma/alpaca-cleaned", split="train")
+            ds = ds.shuffle(seed=seed)
+            ds = ds.select(range(size))
+            return ds.map(
+                lambda elm: {
+                    "prompt": elm["instruction"],
+                    "label": 0,
+                },
+                remove_columns=ds.column_names,
+        )
     if source == "wildchat-benign":
             ds = load_dataset("allenai/WildChat-nontoxic", split="train")
             ds = ds.shuffle(seed=seed)
@@ -49,13 +60,13 @@ def _get_standardized_split(source: str, size: int, seed: int) -> Dataset:
             #select first otherwise filtering takes too long 
             ds_subset = ds.select(range(buffer_size))
             ds_filtered = ds_subset.filter(lambda entry: entry["language"] == "English")
-            ds_final = ds_filtered.select(range(size))
-            return ds_final.map(
+            ds = ds_filtered.select(range(size))
+            return ds.map(
                 lambda elm: {
                     "prompt": elm["conversation"][0]["content"],
                     "label": 0,
                 },
-                remove_columns=ds_final.column_names,
+                remove_columns=ds.column_names,
         )
     elif source == "jbb-harmful":
         ds = load_dataset(
@@ -110,6 +121,7 @@ def prepare_dataset(
     dataset_name: str, sample_size: int = 200, seed: int = SEED
 ) -> Dataset:
     """Returns a Hugging Face dataset with standardized columns: 'prompt' and 'label'"""
+    #high fp test 
     if dataset_name == "50_50_xstest":
         benign = _get_standardized_split("xstest-benign", sample_size, seed)
         harmful = _get_standardized_split("xstest-harmful", sample_size, seed)
@@ -119,18 +131,21 @@ def prepare_dataset(
         benign = _get_standardized_split("jbb-benign", sample_size, seed)
         harmful = _get_standardized_split("jbb-harmful", sample_size, seed)
         return concatenate_datasets([benign, harmful])
-
+    #100 harmless
     elif dataset_name == "0_100":
-        return _get_standardized_split("wildchat-benign", sample_size, seed)
+        return _get_standardized_split("alpaca-cleaned", sample_size, seed)
 
+    #100 harmful
     elif dataset_name == "100_0":
         return _get_standardized_split("jbb-harmful", sample_size, seed)
 
+    #easy
     elif dataset_name == "50_50_easy":
-        benign = _get_standardized_split("wildchat-benign", sample_size, seed)
+        benign = _get_standardized_split("alpaca-cleaned", sample_size, seed)
         harmful = _get_standardized_split("jbb-harmful", sample_size, seed)
         return concatenate_datasets([benign, harmful])
 
+    #realistic
     elif dataset_name == "1_99":
         target_size = max(sample_size, 1000)
         size_benign = int(target_size * 0.99)
