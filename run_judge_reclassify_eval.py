@@ -5,9 +5,6 @@ from reclassify_overall import reclassify, and_rule, or_rule, majority_vote
 from run_evaluation_reworked import log_eval
 from dotenv import load_dotenv
 import os
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["HF_DATASETS_OFFLINE"] = "1"
-
 def run_pipeline(dataset_name, config_path, run_name, base_output_dir="results", config_name="safe_llm_config_base", sample_size=100, batch_size=8):
     name = f"{config_name}_{run_name}"
     dataset_dir = Path(base_output_dir) / name / dataset_name
