@@ -5,14 +5,7 @@ input_detectors:
   - name: "InputDetector1"
     class_path: safeguard_llm.detectors.bert_detector.BERTdetector
     args: 
-      model_path: "bert_models/roberta-input-classifier-jb/checkpoint-8120"    
-      device: *device
-      threshold: 0.95
-      label_pos: 1
-  - name: "InputDetector2"
-    class_path: safeguard_llm.detectors.bert_detector.BERTdetector
-    args: 
-      model_path: "jackhhao/jailbreak-classifier"    
+      model_path: "llm-semantic-router/mmbert32k-jailbreak-detector-merged"    
       device: *device
       threshold: 0.5
       label_pos: 1

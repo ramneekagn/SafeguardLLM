@@ -17,7 +17,7 @@ def reclassify(results, rule_func):
     for entry in results:
         entry["overall_disapproval"] = rule_func(entry)
     return results
-
+"""
 def implication_rule(entry):
     input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
     input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
@@ -28,35 +28,54 @@ def implication_rule(entry):
 
     #  (A => B) equivalent to (not A or B)
     implication = (not is_input_harmful) or conditional_lp
+"""
+def and_rule(entry: dict) -> bool:
+    disapproval_results = []
+    categories = ["input_disapprovals", "internal_disapprovals", "output_disapprovals"]
+    for category in categories:
+        category_dict = entry.get(category, {})
+        for detector_name, detector_data in category_dict.items():
+            disapproved = detector_data["disapproved"]
+            disapproval_results.append(disapproved)
+    if not disapproval_results:
+        return False
+    return all(disapproval_results)
 
-    return implication and output_bert
+def or_rule(entry: dict) -> bool:
+    disapproval_results = []
+    categories = ["input_disapprovals", "internal_disapprovals", "output_disapprovals"]
+    for category in categories:
+        category_dict = entry.get(category, {})
+        for detector_name, detector_data in category_dict.items():
+            disapproved = detector_data["disapproved"]
+            disapproval_results.append(disapproved)
+    return any(disapproval_results)
 
-def and_rule(entry):
-    input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
-    input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
-    output_bert = entry["output_disapprovals"]["OutputDetector1"]["disapproved"]
-    return input_bert and input_lp and output_bert
-
-
-def or_rule(entry):
-    input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
-    input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
-    output_bert = entry["output_disapprovals"]["OutputDetector1"]["disapproved"]
-    return input_bert or input_lp or output_bert
-
-def majority_vote(entry):
-    input_bert = entry["input_disapprovals"]["InputDetector1"]["disapproved"]
-    input_lp = entry["internal_disapprovals"]["InternalDetector1"]["disapproved"]
-    output_bert = entry["output_disapprovals"]["OutputDetector1"]["disapproved"]
-    return (input_bert + input_lp + output_bert) >= 2
+def majority_vote(entry: dict) -> bool:
+    disapproval_results = []
+    categories = ["input_disapprovals", "internal_disapprovals", "output_disapprovals"]
+    for category in categories:
+        category_dict = entry.get(category, {})
+        for detector_name, detector_data in category_dict.items():
+            disapproved = detector_data["disapproved"]
+            disapproval_results.append(disapproved)
+    total_detectors = len(disapproval_results)
+    votes_for_disapproval = sum(disapproval_results)
+    majority_threshold = (total_detectors // 2) + 1
+    return votes_for_disapproval >= majority_threshold
 
 if __name__ == "__main__":
-    json_path = Path("results_safe_llm_config_jackhao_preliminary_dataset_judged.json")
-    save_path = Path("results_safe_llm_config_jackhao_preliminary_dataset_judged_reclassified_and_rule.json")
+    json_path = Path("results/safe_llm_config_base_full_run_copy/50_50_easy/raw_judged.json")
+    save_path = Path("results/safe_llm_config_base_full_run_copy/50_50_easy/judged_or_test.json")
 
     with open(json_path, "r", encoding="utf-8") as f:
         results = json.load(f)
-    results = reclassify(results, and_rule)
-    print(f"Saving reclassified results to: {save_path}")
+
+    results = reclassify(results, or_rule)
+    with open(save_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=4)
+    save_path = Path("results/safe_llm_config_base_full_run_copy/50_50_easy/judged_majority_test.json")
+
+    results = reclassify(results, majority_vote)
     with open(save_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4)
