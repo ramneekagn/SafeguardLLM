@@ -97,5 +97,4 @@ def run_evalulation(results_dir):
 
 
 if __name__ == "__main__":
-    run_evalulation("results/safe_llm_config_base/50_50_easy/judged_and_rule.json")
-    run_evalulation_ensemble("results/safe_llm_config_base/50_50_easy/judged_and_rule.json")
+    run_evalulation_ensemble("results/safe_llm_config_base_full_run_copy/50_50_easy/judged_or_test.json")
