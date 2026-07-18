@@ -9,13 +9,6 @@ input_detectors:
       device: *device
       threshold: 0.95
       label_pos: 1
-  - name: "InputDetector2"
-    class_path: safeguard_llm.detectors.bert_detector.BERTdetector
-    args: 
-      model_path: "jackhhao/jailbreak-classifier"    
-      device: *device
-      threshold: 0.5
-      label_pos: 1
 
 internal_detectors: 
   - name: "InternalDetector1"
