@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from run_and_judge import run_and_judge, _prepare_output_file
-from reclassify_overall import reclassify, implication_rule, and_rule, or_rule, majority_vote
+from reclassify_overall import reclassify, and_rule, or_rule, majority_vote
 from run_evaluation_reworked import log_eval
 from dotenv import load_dotenv
 import os
@@ -41,16 +41,16 @@ def run_pipeline(dataset_name, config_path, run_name, base_output_dir="results",
 
 load_dotenv()
 run_name = "full_run"
-config_file_name = "safe_llm_config_base"
+config_file_name = "safe_llm_config_mmbert32k"
 config_path = Path(f"src/safeguard_llm/config/{config_file_name}.yaml")
-dataset_names = ["50_50_easy_jbb-harmful_alpaca_cleaned", "50_50_hard_jbb-benign_jbb-harmful",  "100_0_jbb_harmful", "0_100_alpaca_cleaned"]
+#dataset_names = ["50_50_easy_jbb-harmful_alpaca_cleaned", "50_50_hard_jbb-benign_jbb-harmful",  "100_0_jbb_harmful", "0_100_alpaca_cleaned"]
+dataset_names = ["50_50_easy_jbb-harmful_alpaca_cleaned"]
 for dataset_name in dataset_names:
     run_pipeline(
         dataset_name=dataset_name,
         config_path = config_path,
-        config_name="safe_llm_config_base",
+        config_name=config_file_name,
         run_name = run_name,
-        sample_size=100,
+        sample_size=5,
         batch_size=8
     )
-
