@@ -40,7 +40,7 @@ def run_pipeline(dataset_name, config_path, run_name, base_output_dir="results",
 
 
 load_dotenv()
-run_name = "full_run"
+run_name = "full_run3"
 config_file_name = "safe_llm_config_mmbert32k"
 config_path = Path(f"src/safeguard_llm/config/{config_file_name}.yaml")
 #dataset_names = ["50_50_easy_jbb-harmful_alpaca_cleaned", "50_50_hard_jbb-benign_jbb-harmful",  "100_0_jbb_harmful", "0_100_alpaca_cleaned"]
@@ -51,6 +51,6 @@ for dataset_name in dataset_names:
         config_path = config_path,
         config_name=config_file_name,
         run_name = run_name,
-        sample_size=5,
+        sample_size=100,
         batch_size=8
     )
