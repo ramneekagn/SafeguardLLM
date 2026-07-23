@@ -65,3 +65,10 @@ You can load the BERT models from the following repos:
 - `HanseeVee/roberta-base-output-jailbreak-classifier`
 
 - `src/safeguard_llm/models/` contains the internal probes.
+
+# Experiments
+
+Contains the experiments from the paper
+
+# Execution script: 
+ run_judge_reclassify_eval is used to create the final data for the experiments
