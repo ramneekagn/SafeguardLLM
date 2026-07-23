@@ -12,8 +12,8 @@ os.environ["HF_DATASETS_OFFLINE"] = "1"
 
 from datasets import load_dataset
 
-#AI generated logger prompt: "generate me log file that runs the evaluations and logs the results in a text file"
-def log_eval(name,sample_size, ensemble_results_dir,  log_dir="logs"):
+#GENAI assisted logger, prompt: "generate me log file that runs the evaluations and logs the results in a text file"
+def log_eval(name,sample_size, ensemble_results_dir,truth_rule=lambda x, y: x and y, log_dir="logs"):
     """
     Executes the standard and ensemble evaluations, capturing all console 
     outputs and writing them into a timestamped log file.
@@ -41,19 +41,21 @@ def log_eval(name,sample_size, ensemble_results_dir,  log_dir="logs"):
             print("\n" + "=" * 80 + "\n")
             
             print(">>> RUNNING ENSEMBLE EVALUATION <<<\n")
-            run_evalulation_ensemble(ensemble_results_dir)
+            run_evalulation_ensemble(ensemble_results_dir,truth_rule=truth_rule)
             print("\n" + "=" * 80)
             print("Evaluation completed successfully.")
             
     print("Logging complete.")
 
 
-def run_evalulation_ensemble(results_dir): 
+def run_evalulation_ensemble(results_dir,truth_rule): 
     json_path = Path(results_dir)
     with open(json_path, "r", encoding="utf-8") as f:
         results = json.load(f)
     print("ensemble")
-    evaluator = SafetyEvaluator(results, truth_rule=lambda x, y: x and y)
+
+    #the true label is an AND of the input/output label pair 
+    evaluator = SafetyEvaluator(results, truth_rule=truth_rule)
     rate_metrics = evaluator.get_ensemble_rate_metrics()
     class_report = evaluator.get_ensemble_classification_report()
 
@@ -68,33 +70,36 @@ def run_evalulation(results_dir):
     json_path = Path(results_dir)
     with open(json_path, "r", encoding="utf-8") as f:
         results = json.load(f)
-    
-    # Input/Internal Evaluator
-    evaluator = SafetyEvaluator(results, truth_rule=lambda x, y: x)
 
-    print(">>> INPUT DETECTOR <<<")
-    input_class_metrics = evaluator.get_rate_metrics("input_disapprovals", "InputDetector1")
-    table_data = list(input_class_metrics.items())
-    table_data.append(("Ideal Refusal Rate", evaluator.get_ideal_refusal()))
-    print(tabulate(table_data, headers=["Input Metric", "Value"]))
-    print("\n" + "-" * 50 + "\n")
+    eval_input_internal = SafetyEvaluator(results, truth_rule=lambda x, y: x)
+    all_detectors= eval_input_internal._get_detector_names()
 
-    print(">>> INTERNAL DETECTOR <<<")
-    internal_class_metrics = evaluator.get_rate_metrics("internal_disapprovals", "InternalDetector1")
-    table_data = list(internal_class_metrics.items())
-    table_data.append(("Ideal Refusal Rate", evaluator.get_ideal_refusal()))
-    print(tabulate(table_data, headers=["Metric", "Value"]))
-    print("\n" + "-" * 50 + "\n")
+    for category in ["input_disapprovals", "internal_disapprovals"]:
+        for detector_name in all_detectors.get(category, []):
+            print(f">>> {category.upper()}: {detector_name} <<<")
+            try:
+                metrics = eval_input_internal.get_rate_metrics(category, detector_name)
+                table_data = list(metrics.items())
+                table_data.append(("Ideal Refusal Rate", eval_input_internal.get_ideal_refusal()))
+                print(tabulate(table_data, headers=["Metric", "Value"], tablefmt="github"))
+            except Exception as e:
+                print(f"Error evaluating {detector_name}: {e}")
+            print("\n" + "-" * 50 + "\n")
 
-    # Output Evaluator
-    evaluator = SafetyEvaluator(results, truth_rule=lambda x, y: y)
-    
-    print(">>> OUTPUT DETECTOR <<<")
-    output_class_metrics = evaluator.get_rate_metrics("output_disapprovals", "OutputDetector1")
-    table_data = list(output_class_metrics.items())
-    table_data.append(("Ideal Refusal Rate", evaluator.get_ideal_refusal()))
-    print(tabulate(table_data, headers=["Metric", "Value"]))
+    eval_output = SafetyEvaluator(results, truth_rule=lambda x, y: y)
+    for detector_name in all_detectors.get("output_disapprovals", []):
+        print(f">>> OUTPUT DISAPPROVALS: {detector_name} <<<")
+        try:
+            metrics = eval_output.get_rate_metrics("output_disapprovals", detector_name)
+            table_data = list(metrics.items())
+            table_data.append(("Ideal Refusal Rate", eval_output.get_ideal_refusal()))
+            print(tabulate(table_data, headers=["Metric", "Value"], tablefmt="github"))
+        except Exception as e:
+            print(f"Error evaluating {detector_name}: {e}")
+        print("\n" + "-" * 50 + "\n")
 
-
+"""
 if __name__ == "__main__":
-    run_evalulation_ensemble("results/safe_llm_config_base_full_run_copy/50_50_easy/judged_or_test.json")
+    run_evalulation("results/safe_llm_config_base_multiple_smoke_test_2/50_50_hard_jbb-benign_jbb-harmful/judged_and_rule.json")
+    run_evalulation_ensemble("results/safe_llm_config_base_multiple_smoke_test_2/50_50_hard_jbb-benign_jbb-harmful/judged_and_rule.json")
+"""

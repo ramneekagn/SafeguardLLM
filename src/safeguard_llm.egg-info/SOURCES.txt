@@ -14,10 +14,16 @@ src/safeguard_llm/detectors/simple_detector.py
 src/safeguard_llm/detectors/internal/internal_detector.py
 src/safeguard_llm/detectors/internal/linear_probe.py
 src/safeguard_llm/detectors/internal/linear_probe_detector.py
+src/safeguard_llm/detectors/internal/mlp_detector.py
+src/safeguard_llm/detectors/internal/mlp_probe.py
 src/safeguard_llm/detectors/internal/simple_internal_detector.py
 src/safeguard_llm/models/model_factory.py
 src/safeguard_llm/utils/classification_rules.py
 src/safeguard_llm/utils/load_config.py
+src/safeguard_llm/utils/output_judge.py
+src/safeguard_llm/utils/save_results.py
 src/safeguard_llm/utils/set_seed.py
+tests/test_evaluator_ensemble.py
 tests/test_internal.py
-tests/test_llm_safety_eval.py
+tests/test_save_results.py
+tests/test_save_results_pipeline.py

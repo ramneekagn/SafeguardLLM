@@ -48,6 +48,19 @@ class BERTdetector(Detector):
         with torch.no_grad():
             outputs = self.model(**input)
         probs = torch.softmax(outputs.logits, dim=-1)
+        """
+        # --- DEBUG PRINTS ---
+        print(f"\n--- DEBUG FOR {self.model.config._name_or_path} ---")
+        print(f"Label Mapping: {self.model.config.id2label}")
+        print(f"Target Label Index: {self.label_pos}")
+        print(f"First Input: {inputs[0][:60]}...")
+        print(f"Input Shape: {input['input_ids'].shape}")
+        print(f"Raw Logits: {outputs.logits[0].tolist()}")
+        print(f"Softmax Probabilities: {probs[0].tolist()}")
+        print(f"Threshold: {self.threshold}")
+        print(f"Is Unsafe: {probs[0][self.label_pos].item() > self.threshold}")
+            # ---------------------
+        """
         target_label_probs = probs[:, self.label_pos]
         
         return (target_label_probs > self.threshold).tolist()

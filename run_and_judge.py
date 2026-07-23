@@ -42,7 +42,7 @@ def _prepare_output_file(output_filename: str, dataset_name: str) -> Path:
 
 def _get_standardized_split(source: str, size: int, seed: int) -> Dataset:
     """Loads, standardizes, and returns a dataset split with columns: 'prompt' and 'label'."""
-    if source == "alpaca-cleaned":
+    if source == "alpaca_cleaned":
             ds = load_dataset("yahma/alpaca-cleaned", split="train")
             ds = ds.shuffle(seed=seed)
             ds = ds.select(range(size))
@@ -53,22 +53,8 @@ def _get_standardized_split(source: str, size: int, seed: int) -> Dataset:
                 },
                 remove_columns=ds.column_names,
         )
-    if source == "wildchat-benign":
-            ds = load_dataset("allenai/WildChat-nontoxic", split="train")
-            ds = ds.shuffle(seed=seed)
-            buffer_size = size * 15
-            #select first otherwise filtering takes too long 
-            ds_subset = ds.select(range(buffer_size))
-            ds_filtered = ds_subset.filter(lambda entry: entry["language"] == "English")
-            ds = ds_filtered.select(range(size))
-            return ds.map(
-                lambda elm: {
-                    "prompt": elm["conversation"][0]["content"],
-                    "label": 0,
-                },
-                remove_columns=ds.column_names,
-        )
-    elif source == "jbb-harmful":
+
+    elif source == "jbb_harmful":
         ds = load_dataset(
             "JailbreakBench/JBB-Behaviors", "behaviors", split="harmful"
         )
@@ -80,19 +66,22 @@ def _get_standardized_split(source: str, size: int, seed: int) -> Dataset:
             remove_columns=ds.column_names,
         )
 
-    elif source == "jbb-benign":
-        ds = load_dataset(
-            "JailbreakBench/JBB-Behaviors", "behaviors", split="benign"
-        )
-        ds = ds.shuffle(seed=seed)
-        size = _check_single_sample_size(size, ds)
-        ds = ds.select(range(size))
-        return ds.map(
-            lambda elm: {"prompt": elm["Goal"], "label": 0},
-            remove_columns=ds.column_names,
-        )
+    elif source == "wild_jb_adversarial_harmful":
+            ds = load_dataset("allenai/wildjailbreak", "train", split="train", keep_default_na=False)
+            ds = ds.filter(lambda x: x["data_type"] == "adversarial_harmful")
+            ds = ds.shuffle(seed=seed)
+            size = _check_single_sample_size(size, ds)
+            ds = ds.select(range(size))
+            return ds.map(
+                lambda elm: {
+                    "prompt": elm["adversarial"], 
+                    "label": 1
+                },
+                remove_columns=ds.column_names,
+            )
 
-    elif source == "xstest-benign":
+
+    elif source == "xstest_benign":
         ds = load_dataset("walledai/XSTest", split="test")
         ds = ds.filter(lambda elm: elm["label"] == "safe")
         ds = ds.shuffle(seed=seed)
@@ -103,7 +92,7 @@ def _get_standardized_split(source: str, size: int, seed: int) -> Dataset:
             remove_columns=ds.column_names,
         )
 
-    elif source == "xstest-harmful":
+    elif source == "xstest_harmful":
         ds = load_dataset("walledai/XSTest", split="test")
         ds = ds.filter(lambda elm: elm["label"] == "unsafe")
         ds = ds.shuffle(seed=seed)
@@ -113,7 +102,17 @@ def _get_standardized_split(source: str, size: int, seed: int) -> Dataset:
             lambda elm: {"prompt": elm["prompt"], "label": 1},
             remove_columns=ds.column_names,
         )
-
+    elif source == "advbench_harmful":
+            # 520 size
+            ds = load_dataset("walledai/AdvBench", split="train")
+            ds = ds.shuffle(seed=seed)
+            size = _check_single_sample_size(size, ds)
+            ds = ds.select(range(size))
+            return ds.map(
+                lambda elm: {"prompt": elm["prompt"], "label": 1},
+                remove_columns=ds.column_names,
+            )
+  
     else:
         raise ValueError(f"Unknown data source: {source}")
     
@@ -123,42 +122,40 @@ def prepare_dataset(
     """Returns a Hugging Face dataset with standardized columns: 'prompt' and 'label'"""
     #high fp test 
     if dataset_name == "50_50_xstest":
-        benign = _get_standardized_split("xstest-benign", sample_size, seed)
-        harmful = _get_standardized_split("xstest-harmful", sample_size, seed)
-        return concatenate_datasets([benign, harmful])
-
-    elif dataset_name == "50_50_hard_jbb-benign_jbb-harmful":
-        benign = _get_standardized_split("jbb-benign", sample_size, seed)
-        harmful = _get_standardized_split("jbb-harmful", sample_size, seed)
+        benign = _get_standardized_split("xstest_benign", sample_size, seed)
+        harmful = _get_standardized_split("xstest_harmful", sample_size, seed)
         return concatenate_datasets([benign, harmful])
     #100 harmless
     elif dataset_name == "0_100_alpaca_cleaned":
-        return _get_standardized_split("alpaca-cleaned", sample_size, seed)
+        return _get_standardized_split("alpaca_cleaned", sample_size, seed)
 
+    elif dataset_name == "100_0_advbench_harmful":
+        return _get_standardized_split("advbench_harmful", sample_size, seed)
+   
     #100 harmful
-    elif dataset_name == "100_0_jbb_harmful":
-        return _get_standardized_split("jbb-harmful", sample_size, seed)
+    elif dataset_name == "100_0_wild_jb":
+        return _get_standardized_split("wild_jb_adversarial_harmful", sample_size, seed)
 
+    elif dataset_name == "0_100_xstest_benign":
+        return _get_standardized_split("xstest_benign", sample_size, seed)
     #easy
-    elif dataset_name == "50_50_easy_jbb-harmful_alpaca_cleaned":
-        benign = _get_standardized_split("alpaca-cleaned", sample_size, seed)
-        harmful = _get_standardized_split("jbb-harmful", sample_size, seed)
+    elif dataset_name == "50_50_easy_jbb_harmful_alpaca_cleaned":
+        benign = _get_standardized_split("alpaca_cleaned", sample_size, seed)
+        harmful = _get_standardized_split("jbb_harmful", sample_size, seed)
         return concatenate_datasets([benign, harmful])
 
     #realistic
-    elif dataset_name == "1_99_jbb-harmful_wildchat-benign":
+    elif dataset_name == "1_99_jbb_harmful_wildchat_benign":
         target_size = max(sample_size, 1000)
         size_benign = int(target_size * 0.99)
         size_harmful = int(target_size * 0.01)
 
-        benign = _get_standardized_split("wildchat-benign", size_benign, seed)
-        harmful = _get_standardized_split("jbb-harmful", size_harmful, seed)
+        benign = _get_standardized_split("wildchat_benign", size_benign, seed)
+        harmful = _get_standardized_split("jbb_harmful", size_harmful, seed)
         return concatenate_datasets([benign, harmful])
 
     else:
-        raise ValueError(f"Dataset {dataset_name} not implemented.")
-    
-# EXECUTION
+        raise ValueError(f"Dataset {dataset_name} not implemented.")# EXECUTION
 
 def run_and_judge(
         dataset_name: str,
@@ -183,7 +180,7 @@ def run_and_judge(
         model_name, padding_side="left"
     )
 
-    safe_model = SafeLLM(
+    safe_model = SafeLLM( 
         model,
         tokenizer,
         max_gen_len=max_gen_len,
@@ -223,10 +220,3 @@ def run_and_judge(
             
     return results
 
-if __name__ == "__main__":
-    load_dotenv()
-    tests = ["50_50_easy", "50_50_hard", "50_50_xstest", "100_0", "0_100", "1_99"]
-    for test in tests:
-        print(test)
-        dataset = prepare_dataset(test, 1)
-        print(dataset)

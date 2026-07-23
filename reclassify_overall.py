@@ -40,7 +40,6 @@ def and_rule(entry: dict) -> bool:
     if not disapproval_results:
         return False
     return all(disapproval_results)
-
 def or_rule(entry: dict) -> bool:
     disapproval_results = []
     categories = ["input_disapprovals", "internal_disapprovals", "output_disapprovals"]
@@ -50,20 +49,7 @@ def or_rule(entry: dict) -> bool:
             disapproved = detector_data["disapproved"]
             disapproval_results.append(disapproved)
     return any(disapproval_results)
-
-def majority_vote(entry: dict) -> bool:
-    disapproval_results = []
-    categories = ["input_disapprovals", "internal_disapprovals", "output_disapprovals"]
-    for category in categories:
-        category_dict = entry.get(category, {})
-        for detector_name, detector_data in category_dict.items():
-            disapproved = detector_data["disapproved"]
-            disapproval_results.append(disapproved)
-    total_detectors = len(disapproval_results)
-    votes_for_disapproval = sum(disapproval_results)
-    majority_threshold = (total_detectors // 2) + 1
-    return votes_for_disapproval >= majority_threshold
-
+"""
 if __name__ == "__main__":
     json_path = Path("results/safe_llm_config_base_full_run_copy/50_50_easy/raw_judged.json")
     save_path = Path("results/safe_llm_config_base_full_run_copy/50_50_easy/judged_or_test.json")
@@ -71,11 +57,8 @@ if __name__ == "__main__":
     with open(json_path, "r", encoding="utf-8") as f:
         results = json.load(f)
 
-    results = reclassify(results, or_rule)
     with open(save_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4)
     save_path = Path("results/safe_llm_config_base_full_run_copy/50_50_easy/judged_majority_test.json")
 
-    results = reclassify(results, majority_vote)
-    with open(save_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=4)
+"""
