@@ -12,8 +12,8 @@ os.environ["HF_DATASETS_OFFLINE"] = "1"
 
 from datasets import load_dataset
 
-#AI generated logger prompt: "generate me log file that runs the evaluations and logs the results in a text file"
-def log_eval(name,sample_size, ensemble_results_dir,  log_dir="logs"):
+#GENAI assisted logger, prompt: "generate me log file that runs the evaluations and logs the results in a text file"
+def log_eval(name,sample_size, ensemble_results_dir,truth_rule=lambda x, y: x and y, log_dir="logs"):
     """
     Executes the standard and ensemble evaluations, capturing all console 
     outputs and writing them into a timestamped log file.
@@ -41,19 +41,21 @@ def log_eval(name,sample_size, ensemble_results_dir,  log_dir="logs"):
             print("\n" + "=" * 80 + "\n")
             
             print(">>> RUNNING ENSEMBLE EVALUATION <<<\n")
-            run_evalulation_ensemble(ensemble_results_dir)
+            run_evalulation_ensemble(ensemble_results_dir,truth_rule=truth_rule)
             print("\n" + "=" * 80)
             print("Evaluation completed successfully.")
             
     print("Logging complete.")
 
 
-def run_evalulation_ensemble(results_dir): 
+def run_evalulation_ensemble(results_dir,truth_rule): 
     json_path = Path(results_dir)
     with open(json_path, "r", encoding="utf-8") as f:
         results = json.load(f)
     print("ensemble")
-    evaluator = SafetyEvaluator(results, truth_rule=lambda x, y: x and y)
+
+    #the true label is an AND of the input/output label pair 
+    evaluator = SafetyEvaluator(results, truth_rule=truth_rule)
     rate_metrics = evaluator.get_ensemble_rate_metrics()
     class_report = evaluator.get_ensemble_classification_report()
 
@@ -96,7 +98,8 @@ def run_evalulation(results_dir):
             print(f"Error evaluating {detector_name}: {e}")
         print("\n" + "-" * 50 + "\n")
 
-
+"""
 if __name__ == "__main__":
     run_evalulation("results/safe_llm_config_base_multiple_smoke_test_2/50_50_hard_jbb-benign_jbb-harmful/judged_and_rule.json")
     run_evalulation_ensemble("results/safe_llm_config_base_multiple_smoke_test_2/50_50_hard_jbb-benign_jbb-harmful/judged_and_rule.json")
+"""
