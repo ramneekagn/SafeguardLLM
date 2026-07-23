@@ -47,14 +47,23 @@ uv sync
 
 ## Directories
 
-- `experiments/`: Scripts final experiments
+- `experiments/`: Scripts or our final experiments
 - `results/`: The main results of our experiments
-- `src/`: Python source files
-- `training/`: Training scripts for detectors
+- `src/`: Python source files for whole Safety LLM Harness
+- `training/`: Training scripts for the detectors
 
 ## Configuration & Documents
 
-- `README.md`: This file, project introduction
+- `README.md`: Project introductions
 - `requirements.txt`: Python environment requirements
 - `pyproject.toml`: Project configuration and dependencies
 - `uv.lock`: Lockfile for reproducible dependency management
+
+# Detectors
+
+This project contains different trained safety classifiers:
+You can load the BERT models from the following repos:
+- `HanseeVee/roberta-base-input-jailbreak-classifier"`
+- `HanseeVee/roberta-base-output-jailbreak-classifier`
+
+- `src/safeguard_llm/models/` contains the internal probes.
