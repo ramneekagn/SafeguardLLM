@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
-from run_and_judge import run_and_judge, _prepare_output_file
-from reclassify_overall import reclassify, and_rule
-from run_evaluation_reworked import log_eval
+from safeguard_llm.utils.run_and_judge import run_and_judge, _prepare_output_file
+from safeguard_llm.utils.reclassify_overall import reclassify, and_rule
+from safeguard_llm.run_evaluation import log_eval
 from dotenv import load_dotenv
 import os
 def run_pipeline(dataset_name, config_path, run_name, base_output_dir="results", config_name="safe_llm_config_base", sample_size=100, batch_size=8):
@@ -40,7 +40,7 @@ config_file_names = [
     "safe_llm_config_base_v2_input_v1_output_lp_internal_0_5t_all"
 ]
 
-run_name = "experiment2_0_5t_all_final"
+run_name = "experiment2_0_5t_all_smoke_test"
 dataset_names = [
     "100_0_wild_jb",
     "100_0_advbench_harmful",

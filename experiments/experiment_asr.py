@@ -2,8 +2,8 @@ import json
 import matplotlib.pyplot as plt
 from safeguard_llm.evaluator import SafetyEvaluator
 
-file_paths = ["results/safe_llm_config_base_v2_input_v1_output_lp_internal_0_5t_all_experiment2_0_5t_all/100_0_advbench_harmful/judged_and_rule.json",
-              "results/safe_llm_config_base_v2_input_v1_output_lp_internal_0_5t_all_experiment2_0_5t_all/100_0_allen_wild_jb/judged_and_rule.json"]
+file_paths = ["results/safe_llm_config_base_v2_input_v1_output_lp_internal_0_5t_all/100_0_advbench_harmful/judged_and_rule.json",
+              "results/safe_llm_config_base_v2_input_v1_output_lp_internal_0_5t_all/100_0_allen_wild_jb/judged_and_rule.json"]
 
 all_values = []
 all_titles = ["AdvBench", "WildJBB Adversarial"]

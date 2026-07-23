@@ -1,8 +1,8 @@
 import json
 from safeguard_llm.evaluator import SafetyEvaluator
 import matplotlib.pyplot as plt
-file_paths = ["results/safe_llm_config_base_v2_input_v1_output_lp_internal_0_5t_all_experiment2_0_5t_all/0_100_alpaca_cleaned/judged_and_rule.json",
-              "results/safe_llm_config_base_v2_input_v1_output_lp_internal_0_5t_all_experiment2_0_5t_all/0_100_xstest_benign/judged_and_rule.json"]
+file_paths = ["results/safe_llm_config_base_v2_input_v1_output_lp_internal_0_5t_all/0_100_alpaca_cleaned/judged_and_rule.json",
+              "results/safe_llm_config_base_v2_input_v1_output_lp_internal_0_5t_all/0_100_xstest_benign/judged_and_rule.json"]
 
 orr_all_values = []
 
