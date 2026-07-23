@@ -33,3 +33,28 @@ venv\scritps\activate
 
 ## 4. Install as package
   pip install -e .
+
+## uv workflow
+
+```
+# create the virtual environment
+uv venv 
+# install the base dependencies
+uv sync
+```
+
+# Project Structure
+
+## Directories
+
+- `experiments/`: Scripts final experiments
+- `results/`: The main results of our experiments
+- `src/`: Python source files
+- `training/`: Training scripts for detectors
+
+## Configuration & Documents
+
+- `README.md`: This file, project introduction
+- `requirements.txt`: Python environment requirements
+- `pyproject.toml`: Project configuration and dependencies
+- `uv.lock`: Lockfile for reproducible dependency management

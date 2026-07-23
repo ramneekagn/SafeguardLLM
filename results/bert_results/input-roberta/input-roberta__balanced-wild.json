@@ -1,0 +1,1 @@
+{"model": "checkpoint-1500", "dataset": "5050_wild", "sample_size": 420, "roc_auc": 0.7808, "pr-auc": 0.7774, "05_fpr": {"threshold": 0.9539, "fpr": 0.0524, "fnr": 0.6952}, "05_fnr": {"threshold": 0.3129, "fnr": 0.0524, "fpr": 0.6857}}

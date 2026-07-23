@@ -1,0 +1,1 @@
+{"model": "meta-llama/Llama-Prompt-Guard-2-22M", "dataset": "xs-test", "sample_size": 450, "roc_auc": 0.6431, "pr-auc": 0.5498, "05_fpr": {"threshold": 0.004, "fpr": 0.052, "fnr": 0.915}, "05_fnr": {"threshold": 0.0011, "fnr": 0.05, "fpr": 0.812}}
