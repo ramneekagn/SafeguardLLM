@@ -18,6 +18,15 @@ class BERTdetector(Detector):
         label_pos (int): The index position of the target label. Defaults to 0.
     """
     def __init__(self, model_path: Path, device: str, threshold: float = 0.5, label_pos: int = 0):
+        """ Initializes the BERTdetector by loading its model weights.
+
+       Args:
+           model_path: File path or Huggingface ID for the BERT model
+           device: Device to run inference on such as 'cuda' 'cpu' 'mps'
+           threshold: Probability threshold to trigger label change. Defaults to 0.5
+           label_pos: Index position for the class to evaluate it. Defaults to 0.
+       """
+
         super().__init__()
         self.threshold = threshold
         print("Bert: ", self.threshold)
