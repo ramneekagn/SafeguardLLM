@@ -15,15 +15,11 @@ from peft import PeftModel
 
 BERTS = [
     "HanseeVee/roberta-base-input-jailbreak-classifier",
-    "llm-semantic-router/mmbert32k-jailbreak-detector-merged",
     "llm-semantic-router/mmbert-safety-classifier-level1",
     "meta-llama/Llama-Prompt-Guard-2-86M",
     "meta-llama/Llama-Prompt-Guard-2-22M",
-    "pmking27/jailbreak-detection",
-    "hjackhhao/jailbreak-classifier",
-    "lordofthejars/jailbreak-classifier"
 ]
-
+# Balanced-Wild, Balanced-Mixed, XS-Test, Low-Prevalence
 DATASETS = ["5050_wild", "5050_both", "xs-test", "0199"]
 SEED = 40
 
