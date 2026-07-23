@@ -60,7 +60,7 @@ uv sync
 # Detectors
 
 This project contains different trained safety classifiers:
-You can load the BERT models from the following repos:
+You can load the BERT models from the following repos (Huggingface):
 - `HanseeVee/roberta-base-input-jailbreak-classifier"`
 - `HanseeVee/roberta-base-output-jailbreak-classifier`
 
@@ -71,4 +71,4 @@ You can load the BERT models from the following repos:
 Contains the experiments from the paper
 
 # Execution script: 
- run_judge_reclassify_eval is used to create the final data for the experiments
+ run_judge_reclassify_eval is used to create the final data for the experiments, i.e the predictions of the different classifiers
