@@ -1,0 +1,1 @@
+{"model": "checkpoint-1500", "dataset": "xs-test", "sample_size": 450, "roc_auc": 0.7734, "pr-auc": 0.7374, "05_fpr": {"threshold": 0.9401, "fpr": 0.052, "fnr": 0.73}, "05_fnr": {"threshold": 0.1859, "fnr": 0.05, "fpr": 0.724}}

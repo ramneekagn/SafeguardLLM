@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from safeguard_llm.detectors.internal.internal_detector import InternalDetector
 from torch import Tensor
 import torch

@@ -5,3 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "safeguard_llm"
 version = "0.1.0"
+dependencies = [
+    "nlpaug>=1.1.11",
+    "openai>=2.47.0",
+    "peft>=0.19.1",
+    "scipy-stubs~=1.18.0",
+]

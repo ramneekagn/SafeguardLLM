@@ -5,7 +5,7 @@ input_detectors:
   - name: "InputDetector1"
     class_path: safeguard_llm.detectors.bert_detector.BERTdetector
     args: 
-      model_path: "bert_models/roberta_input_v2/checkpoint-1500"    
+      model_path: "HanseeVee/roberta-base-input-jailbreak-classifier"
       device: *device
       threshold: 0.5
       label_pos: 1
@@ -24,7 +24,7 @@ output_detectors:
   - name: "OutputDetector1"
     class_path: safeguard_llm.detectors.bert_detector.BERTdetector
     args: 
-      model_path: "bert_models/roberta-output_harm_aug_v1/checkpoint-12297"    
+      model_path: "HanseeVee/roberta-base-output-jailbreak-classifier"
       device: *device
       threshold: 0.5
       label_pos: 1

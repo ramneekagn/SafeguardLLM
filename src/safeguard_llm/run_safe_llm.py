@@ -1,14 +1,28 @@
+from typing import Any
+
 from safeguard_llm.safety_harness import SafeLLM
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from safeguard_llm.dataset.dataset_provider import DatasetProvider
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-from importlib import resources
-import os
 
 
-def run_safe_llm(dataset_name, dataset_size, prompt_col, label_col,split, subset=None):
+def run_safe_llm(dataset_name: str, dataset_size: int, prompt_col: str, label_col: str,split: str, subset=None) -> tuple[list[Any], list[Any]]:
+    """ Runs through the safety harness pipeline over a dataset.
 
+    Args:
+        dataset_name: Huggingface dataset id
+        dataset_size: Number of samples from the dataset
+        prompt_col: Column key containing the user prompt
+        label_col: Column key containg the gold label
+        split: Dataset split to load such as 'train' 'eval'
+        subset: Specific subset of the dataset. Defaults to None.
+
+    Returns:
+        tuple[list[Any], list[Any]]
+            - outputs: List of the GenerationSafetyResults
+            - all_labels: List of gold labels from the dataset
+    """
     provider = DatasetProvider(dataset_name, source = "hf")
     ds = provider.get_dataset(split=split, seed=40, subset=subset, size=dataset_size)
     dataloader = DataLoader(ds, batch_size=1)

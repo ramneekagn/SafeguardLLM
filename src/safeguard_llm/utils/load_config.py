@@ -5,6 +5,7 @@ from typing import Any
 
 #This function was ai generated per description
 def instantiate_component(config_dict: dict[str, Any]) -> Any:
+    """Instantiates the class at runtime """
     if "name" not in config_dict:
         raise ValueError("Configuration dictionary must contain 'name' for detectors")
 
@@ -22,6 +23,14 @@ def instantiate_component(config_dict: dict[str, Any]) -> Any:
     return instance
 
 def load_safety_config(config_path: Path) -> dict[str, Any]:
+    """ Loads the Safety Harness configuration to apply around the LLM
+
+    Args:
+        config_path: Path to the config yaml
+
+    Returns:
+        dict containing the instantiated safety classifier and metadata.
+    """
     with open(config_path, "r") as file:
         raw_config = yaml.safe_load(file)
     

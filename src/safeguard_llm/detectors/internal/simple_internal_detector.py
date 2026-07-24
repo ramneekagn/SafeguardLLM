@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from safeguard_llm.detectors.internal.internal_detector import InternalDetector
 from torch import Tensor
 import torch
@@ -9,6 +8,7 @@ class SimpleInternalDetector(InternalDetector):
         self.activation_cache: list[Tensor] = []
         self.pos = 0
         self.threshold = 0
+
     # the hook gets the entire batch 
     def hook(self, module, input: Tensor, output:Tensor) -> None: 
         self.activation_cache.append(output[:,-1,:].detach().clone().to(self.device)) 

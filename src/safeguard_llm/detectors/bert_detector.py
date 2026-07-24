@@ -18,6 +18,15 @@ class BERTdetector(Detector):
         label_pos (int): The index position of the target label. Defaults to 0.
     """
     def __init__(self, model_path: Path, device: str, threshold: float = 0.5, label_pos: int = 0):
+        """ Initializes the BERTdetector by loading its model weights.
+
+       Args:
+           model_path: File path or Huggingface ID for the BERT model
+           device: Device to run inference on such as 'cuda' 'cpu' 'mps'
+           threshold: Probability threshold to trigger label change. Defaults to 0.5
+           label_pos: Index position for the class to evaluate it. Defaults to 0.
+       """
+
         super().__init__()
         self.threshold = threshold
         print("Bert: ", self.threshold)
@@ -48,19 +57,7 @@ class BERTdetector(Detector):
         with torch.no_grad():
             outputs = self.model(**input)
         probs = torch.softmax(outputs.logits, dim=-1)
-        """
-        # --- DEBUG PRINTS ---
-        print(f"\n--- DEBUG FOR {self.model.config._name_or_path} ---")
-        print(f"Label Mapping: {self.model.config.id2label}")
-        print(f"Target Label Index: {self.label_pos}")
-        print(f"First Input: {inputs[0][:60]}...")
-        print(f"Input Shape: {input['input_ids'].shape}")
-        print(f"Raw Logits: {outputs.logits[0].tolist()}")
-        print(f"Softmax Probabilities: {probs[0].tolist()}")
-        print(f"Threshold: {self.threshold}")
-        print(f"Is Unsafe: {probs[0][self.label_pos].item() > self.threshold}")
-            # ---------------------
-        """
+
         target_label_probs = probs[:, self.label_pos]
         
         return (target_label_probs > self.threshold).tolist()
